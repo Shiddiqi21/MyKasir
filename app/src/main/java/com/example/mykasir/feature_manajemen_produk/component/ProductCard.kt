@@ -36,7 +36,21 @@ fun ProductCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(product.name, fontWeight = FontWeight.Bold, color = Color(0xFF333333))
+                // 🔹 Nama Produk
+                Text(
+                    product.name,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF333333)
+                )
+
+                // 🔹 Kategori Produk
+                Text(
+                    text = "Kategori: ${product.category}",
+                    color = Color(0xFF6E6E6E),
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                // 🔹 Harga & Stok
                 Text("Harga: Rp${product.price}", color = Color.Gray)
                 Text("Stok: ${product.stock}", color = Color.Gray)
             }

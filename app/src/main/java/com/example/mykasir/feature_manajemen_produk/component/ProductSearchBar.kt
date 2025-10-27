@@ -2,12 +2,10 @@ package com.example.mykasir.feature_manajemen_produk.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -19,12 +17,13 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ProductSearchBar(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier // <-- 1. TAMBAHKAN PARAMETER INI
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Cari Produk") },
+        placeholder = { Text("Cari Produk") }, // Sesuai desain Anda
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
@@ -40,9 +39,9 @@ fun ProductSearchBar(
             cursorColor = Color(0xFF6EC1E4)
         ),
         shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
+        singleLine = true, // Tambahan bagus agar tidak jadi multi-baris
+        modifier = modifier // <-- 2. TERAPKAN MODIFIER DARI PARAMETER
             .fillMaxWidth()
-            .height(54.dp) // 🔹
             .background(Color.Transparent)
     )
 }

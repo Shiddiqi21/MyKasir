@@ -10,24 +10,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+// Gunakan warna dari Color.kt
 private val LightColorScheme = lightColorScheme(
-    primary = BluePrimary,
+    primary = PrimaryBlue,
     secondary = OrangeAccent,
-    background = BackgroundLight,
-    surface = CardBackground,
-    onPrimary = Color.White,
+    background = BackgroundPrimary,
+    surface = SurfacePrimary,
+    onPrimary = TextOnPrimary, // Teks di atas 'primary' (Putih)
     onSecondary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
+    onBackground = TextPrimary, // Teks di atas 'background' (Hitam)
+    onSurface = TextPrimary, // Teks di atas 'surface' (Hitam)
+    error = RedWarning
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = BlueLight,
+    // Anda bisa atur tema gelap nanti, untuk sekarang kita samakan
+    primary = PrimaryBlue,
     secondary = OrangeAccent,
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
-    onPrimary = Color.White,
-    onBackground = Color.White
+    onPrimary = TextOnPrimary,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    error = RedWarning
 )
 
 @Composable
@@ -39,7 +44,7 @@ fun MyKasirTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = AppTypography,
+        typography = AppTypography, // Pastikan Anda punya file Typography.kt
         shapes = Shapes(
             small = RoundedCornerShape(6.dp),
             medium = RoundedCornerShape(12.dp),

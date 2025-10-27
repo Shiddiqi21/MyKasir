@@ -30,8 +30,12 @@ class ProductViewModel : ViewModel() {
         products.remove(product)
     }
 
-    fun editProduct(updated: Product) {
+    // --- DIUBAH DI SINI ---
+    // Ganti nama 'editProduct' menjadi 'updateProduct' agar sesuai
+    // dengan yang dipanggil di StokTipisScreen
+    fun updateProduct(updated: Product) {
         val idx = products.indexOfFirst { it.id == updated.id }
         if (idx >= 0) products[idx] = updated
     }
+    // ----------------------
 }

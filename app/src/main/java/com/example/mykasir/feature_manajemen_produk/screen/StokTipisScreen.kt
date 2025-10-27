@@ -1,93 +1,92 @@
 package com.example.mykasir.feature_manajemen_produk.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.* // <-- Import semua runtime
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.mykasir.core_ui.SimpleTopBar
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
-import com.example.mykasir.ui.theme.PrimaryColor
-import com.example.mykasir.ui.theme.BackgroundColor
+import com.example.mykasir.feature_manajemen_produk.component.UpdateStockDialog // <-- 1. IMPORT DIALOG
+import com.example.mykasir.feature_manajemen_produk.model.Product // <-- 2. IMPORT MODEL PRODUK
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StokTipisScreen(navController: NavController, viewModel: ProductViewModel) {
     val lowStockProducts = viewModel.products.filter { it.stock < it.minStock }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundColor)
-    ) {
-        // 🔹 Header dengan tombol kembali
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(PrimaryColor)
-                .padding(vertical = 16.dp, horizontal = 20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Kembali",
-                        tint = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = "Warning",
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Stok Menipis",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-        }
+    // --- 3. STATE UNTUK DIALOG ---
+    // State untuk tahu dialog harus muncul atau tidak
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    // State untuk menyimpan produk mana yang sedang dipilih
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
+    // -----------------------------
 
-        Spacer(modifier = Modifier.height(16.dp))
+    Scaffold(
+        topBar = {
+            SimpleTopBar(
+                title = "Stok Menipis",
+                onBackPress = { navController.popBackStack() }
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+
+        // --- 4. TAMPILKAN DIALOG JIKA 'showUpdateDialog' ADALAH TRUE ---
+        if (showUpdateDialog && selectedProduct != null) {
+            UpdateStockDialog(
+                product = selectedProduct!!,
+                onDismiss = {
+                    showUpdateDialog = false // Tutup dialog
+                    selectedProduct = null // Bersihkan pilihan
+                },
+                onConfirm = { newStockValue ->
+                    // Ambil produk yang dipilih dan update stoknya
+                    val updatedProduct = selectedProduct!!.copy(stock = newStockValue)
+                    // Panggil ViewModel untuk menyimpan
+                    viewModel.updateProduct(updatedProduct) // (Pastikan Anda punya fungsi ini!)
+
+                    showUpdateDialog = false // Tutup dialog
+                    selectedProduct = null // Bersihkan pilihan
+                }
+            )
+        }
+        // -----------------------------------------------------------
 
         if (lowStockProducts.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Semua stok produk aman 😊",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
         } else {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp),
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                lowStockProducts.forEach { product ->
+                items(lowStockProducts) { product ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Row(
@@ -102,39 +101,43 @@ fun StokTipisScreen(navController: NavController, viewModel: ProductViewModel) {
                                     text = product.name,
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold
-                                    )
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "Stok Minimum : ${product.minStock}",
-                                    color = Color.Gray,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
                                     text = "Stok Saat Ini : ${product.stock}",
-                                    color = Color.Gray,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
 
+                            // 🔹 Tombol Update
                             Button(
-                                onClick = { navController.navigate("tambah_produk") },
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                                // --- 5. UBAH AKSI ONCLICK ---
+                                onClick = {
+                                    selectedProduct = product // Set produk yang dipilih
+                                    showUpdateDialog = true // Tampilkan dialog
+                                },
+                                // ----------------------------
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text("Update", color = Color.White)
+                                Text(
+                                    "Update",
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
                             }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "Segera update stok untuk menghindari kehabisan",
-                    color = Color(0xFF777777),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                // ... (item 'Segera update stok...')
             }
         }
     }
