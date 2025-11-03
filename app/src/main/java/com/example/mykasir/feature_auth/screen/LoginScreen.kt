@@ -63,7 +63,7 @@ fun LoginScreen(
             Image(
                 painter = painterResource(id = R.drawable.mykasir_logo),
                 contentDescription = "MyKasir Logo",
-                modifier = Modifier.height(200.dp)
+                modifier = Modifier.height(150.dp)
             )
 
             Spacer(modifier = Modifier.height(38.dp))
