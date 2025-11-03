@@ -53,14 +53,31 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // ✅ Tambahkan ini agar ikon seperti CameraAlt tidak error
     implementation("androidx.compose.material:material-icons-extended")
 
-    // ✅ Navigasi Compose
+    // Navigasi (Sudah ada)
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
-    // ✅ Untuk load gambar dari URI
+    // Coil (Sudah ada)
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // --- TAMBAHAN BARU DI SINI ---
+
+    // 1. ViewModel
+    // Dibutuhkan untuk `viewModel()` dan `lifecycle-viewmodel-ktx`
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+    // 2. Retrofit (Untuk koneksi API)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+    // 3. Gson Converter (Untuk mengubah JSON -> Kotlin)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // 4. OkHttp (Dibutuhkan oleh Retrofit)
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    // --- AKHIR TAMBAHAN ---
+
 
     // ✅ Testing
     testImplementation(libs.junit)

@@ -5,7 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
-import com.example.mykasir.navigationapp.MainAppHost // <-- IMPORT BARU
+// --- UBAH IMPORT INI ---
+import com.example.mykasir.navigationapp.RootNavGraph // <-- Ganti dari MainAppHost
 import com.example.mykasir.ui.theme.MyKasirTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,8 +22,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyKasirApp() {
     MyKasirTheme {
-        // Surface, ViewModel, dan NavController sudah pindah ke dalam MainAppHost
-        // Jadi di sini kita cukup memanggil MainAppHost
-        MainAppHost()
+        // Panggil RootNavGraph sebagai titik masuk aplikasi
+        // RootNavGraph yang akan memutuskan untuk menampilkan
+        // LoginScreen atau MainAppHost
+        RootNavGraph()
     }
 }
