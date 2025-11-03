@@ -1,13 +1,17 @@
 package com.example.mykasir.core_data.remote
 
-import com.example.mykasir.feature_auth.model.LoginRequest
 import com.example.mykasir.feature_auth.model.LoginResponse
-import retrofit2.http.Body
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
 
 interface ApiService {
-    @POST("v1/login") // Path yang Anda buat di Beeceptor
+
+    // Menggunakan FormUrlEncoded sesuai API UNAND
+    @FormUrlEncoded
+    @POST("auth/login")
     suspend fun login(
-        @Body request: LoginRequest
+        @Field("email") email: String,
+        @Field("password") password: String
     ): LoginResponse
 }

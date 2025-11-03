@@ -76,8 +76,6 @@ dependencies {
     // 4. OkHttp (Dibutuhkan oleh Retrofit)
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
-    // --- AKHIR TAMBAHAN ---
-
 
     // ✅ Testing
     testImplementation(libs.junit)

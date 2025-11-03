@@ -22,7 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mykasir.R // Pastikan R di-import
 import com.example.mykasir.feature_auth.viewmodel.LoginUiState
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
-
+import androidx.compose.ui.layout.ContentScale
 /**
  * Layar Login.
  * @param onLoginSuccess Lambda yang akan dipanggil saat login berhasil.
@@ -59,14 +59,15 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // !! PERINGATAN: Anda HARUS menambahkan 'mykasir_logo_umkm.png' ke res/drawable
+
             Image(
                 painter = painterResource(id = R.drawable.mykasir_logo),
                 contentDescription = "MyKasir Logo",
-                modifier = Modifier.height(150.dp)
+                modifier = Modifier.height(80.dp),
+                contentScale = ContentScale.FillHeight // <-- TAMBAHKAN INI // Coba ubah-ubah nilai ini
             )
 
-            Spacer(modifier = Modifier.height(38.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Text(
                 text = "Login to your Account",

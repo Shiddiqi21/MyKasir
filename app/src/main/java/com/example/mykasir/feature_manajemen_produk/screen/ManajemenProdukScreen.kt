@@ -7,17 +7,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Store
+// import androidx.compose.material.icons.filled.Person // Tidak dipakai, kita pakai drawable
+// import androidx.compose.material.icons.filled.Store // Tidak dipakai, kita pakai drawable
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource // <-- IMPORT INI
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.mykasir.R // <-- IMPORT R (Resource)
 import com.example.mykasir.feature_manajemen_produk.component.ProductCard
 import com.example.mykasir.feature_manajemen_produk.component.ProductSearchBar
 import com.example.mykasir.feature_manajemen_produk.navigation.Screen
@@ -28,7 +30,6 @@ import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewModel) {
     var query by remember { mutableStateOf("") }
 
-    // Latar belakang utama mengambil dari tema
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,21 +50,27 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // --- 1. UBAH DI SINI: Gunakan painterResource ---
                 Icon(
-                    imageVector = Icons.Filled.Store,
+                    // Pastikan Anda punya file 'mykasir_logo' di drawable
+                    painter = painterResource(id = R.drawable.mykasir_logo),
                     contentDescription = "Logo MyKasir",
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(70.dp)
                 )
+
                 Text(
                     text = "Manajemen Produk",
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold
                 )
+
                 IconButton(onClick = { /* Arahkan ke profil */ }) {
+                    // --- 2. UBAH DI SINI: Gunakan painterResource ---
                     Icon(
-                        imageVector = Icons.Filled.Person,
+                        // Pastikan Anda punya file 'ic_person' di drawable
+                        painter = painterResource(id = R.drawable.ic_person),
                         contentDescription = "Profil",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(28.dp)
@@ -89,13 +96,11 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     Icon(
                         Icons.Default.Warning,
                         contentDescription = null,
-                        // --- 1. UBAH DI SINI ---
-                        tint = MaterialTheme.colorScheme.primary // (Jadi Biru)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         "Stok Tipis",
-                        // --- 2. UBAH DI SINI ---
-                        color = MaterialTheme.colorScheme.primary, // (Jadi Biru)
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 6.dp)
                     )
                 }
@@ -112,13 +117,11 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     Icon(
                         Icons.Default.Add,
                         contentDescription = null,
-                        // --- 3. UBAH DI SINI ---
-                        tint = MaterialTheme.colorScheme.primary, // (Jadi Biru)
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         "Tambah",
-                        // --- 4. UBAH DI SINI ---
-                        color = MaterialTheme.colorScheme.primary, // (Jadi Biru)
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 6.dp)
                     )
                 }

@@ -4,8 +4,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // !! PENTING: GANTI URL INI DENGAN URL BEECEPTOR ANDA !!
-    private const val BASE_URL = "https://mykasir-testing.free.beeceptor.com"
+
+    // URL API UNAND Anda
+    private const val BASE_URL = "https://backend-ptb.unand.dev/"
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()
