@@ -11,7 +11,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SimpleTopBar(
     title: String,
-    onBackPress: () -> Unit
+    onBackPress: () -> Unit,
+    actions: @Composable () -> Unit = {}
 ) {
     TopAppBar(
         title = {
@@ -19,7 +20,7 @@ fun SimpleTopBar(
                 text = title,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimary // <-- GANTI
+                color = MaterialTheme.colorScheme.onPrimary 
             )
         },
         navigationIcon = {
@@ -27,14 +28,15 @@ fun SimpleTopBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Kembali",
-                    tint = MaterialTheme.colorScheme.onPrimary // <-- GANTI
+                    tint = MaterialTheme.colorScheme.onPrimary 
                 )
             }
         },
+        actions = { actions() },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary, // <-- GANTI
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary, // <-- GANTI
-            titleContentColor = MaterialTheme.colorScheme.onPrimary // <-- GANTI
+            containerColor = MaterialTheme.colorScheme.primary, 
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary, 
+            titleContentColor = MaterialTheme.colorScheme.onPrimary 
         )
     )
 }

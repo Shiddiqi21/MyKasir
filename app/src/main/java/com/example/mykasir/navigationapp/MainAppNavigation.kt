@@ -22,13 +22,14 @@ import androidx.navigation.compose.rememberNavController
 // --- Import Fitur Anda ---
 import com.example.mykasir.feature_manajemen_produk.navigation.ManajemenProdukNav
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
+import com.example.mykasir.feature_transaksi.navigation.TransaksiNav
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
     NavItem("Home", Icons.Filled.Home, "home"),
+    NavItem("Package", Icons.Filled.Inventory2, "package"),
     NavItem("Wallet", Icons.Filled.Wallet, "wallet"),
-    NavItem("Docs", Icons.Filled.Description, "docs"),
-    NavItem("Package", Icons.Filled.Inventory2, "package")
+    NavItem("Docs", Icons.Filled.Description, "docs")
 )
 
 /**
@@ -70,7 +71,10 @@ fun MainAppHost() {
             }
 
             // Rute untuk tab-tab lainnya
-            composable("wallet") { PlaceholderScreen("Halaman Dompet") }
+            composable("wallet") {
+                val txNavController = rememberNavController()
+                TransaksiNav(hostNavController = txNavController)
+            }
             composable("docs") { PlaceholderScreen("Halaman Dokumen") }
             composable("home") { PlaceholderScreen("Halaman Home") }
         }

@@ -52,8 +52,6 @@ fun RootNavGraph() {
             startDestination = "main_host"
         ) {
             composable(route = "main_host") {
-                // MainAppHost adalah Composable Anda dari file
-                // MainAppNavigation.kt yang berisi BottomNavBar
                 MainAppHost()
             }
         }

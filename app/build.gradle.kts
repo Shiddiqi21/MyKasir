@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.mykasir"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.mykasir"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -65,7 +65,7 @@ dependencies {
 
     // 1. ViewModel
     // Dibutuhkan untuk `viewModel()` dan `lifecycle-viewmodel-ktx`
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
 
     // 2. Retrofit (Untuk koneksi API)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
