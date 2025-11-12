@@ -8,19 +8,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import com.example.mykasir.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.IconButtonDefaults
 import com.example.mykasir.feature_transaksi.model.Customer
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
+import com.example.mykasir.core_ui.LocalNotifier
+import com.example.mykasir.core_ui.NotificationType
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun TransaksiListScreen(
@@ -28,18 +36,20 @@ fun TransaksiListScreen(
     onTambahTransaksi: () -> Unit,
     onDetail: (Customer) -> Unit
 ) {
+    val notifier = LocalNotifier.current
+    var customerToDelete by remember { mutableStateOf<Customer?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primary)
     ) {
-        // Header biru dengan logo dan judul
+        // Header biru dengan logo dan judul (selaraskan dengan ManajemenProduk)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -50,7 +60,7 @@ fun TransaksiListScreen(
                     painter = painterResource(id = R.drawable.mykasir_logo),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(70.dp)
                 )
                 Text(
                     text = "Transaksi",
@@ -58,12 +68,14 @@ fun TransaksiListScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_person),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(28.dp)
-                )
+                IconButton(onClick = { /* Arahkan ke profil */ }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_person),
+                        contentDescription = "Profil",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             Button(
@@ -94,7 +106,7 @@ fun TransaksiListScreen(
                     .padding(20.dp)
             ) {
                 Text(
-                    text = "Nama Pelanggan",
+                    text = "Riwayat Transaksi",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
@@ -118,13 +130,48 @@ fun TransaksiListScreen(
                         CustomerRow(
                             customer = customer,
                             onDetail = { onDetail(customer) },
-                            onDelete = { viewModel.removeCustomer(customer) },
+                            onDelete = { customerToDelete = customer },
                             txIds = txs.map { it.id }
                         )
                     }
                 }
             }
         }
+    }
+
+    // Dialog konfirmasi hapus riwayat transaksi pelanggan
+    val pending = customerToDelete
+    if (pending != null) {
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.removeCustomer(pending)
+                        notifier?.show("Riwayat transaksi dihapus", NotificationType.Success, 1500)
+                        customerToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Hapus") }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { customerToDelete = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Batal") }
+            },
+            icon = { Icon(imageVector = Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Hapus Riwayat", fontWeight = FontWeight.Bold) },
+            text = { Text("Apakah Anda yakin ingin menghapus riwayat transaksi ${pending.name}?") },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White,
+            tonalElevation = 6.dp
+        )
     }
 }
 

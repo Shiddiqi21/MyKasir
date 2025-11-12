@@ -25,12 +25,18 @@ import com.example.mykasir.feature_manajemen_produk.component.ProductCard
 import com.example.mykasir.feature_manajemen_produk.component.ProductSearchBar
 import com.example.mykasir.feature_manajemen_produk.navigation.Screen
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
+import com.example.mykasir.core_ui.LocalNotifier
+import com.example.mykasir.core_ui.NotificationType
+import com.example.mykasir.feature_manajemen_produk.model.Product
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewModel) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val notifier = LocalNotifier.current
+    var productToDelete by remember { mutableStateOf<Product?>(null) }
 
     Column(
         modifier = Modifier
@@ -158,13 +164,28 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Deretan chip kategori
+                    // Deretan chip kategori (dengan opsi "Semua")
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Chip "Semua" untuk menampilkan semua produk
+                        item {
+                            FilterChip(
+                                selected = true,
+                                onClick = { selectedCategory = null },
+                                label = { Text("Semua") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
+                        // Chip kategori lainnya
                         items(categories) { category ->
                             FilterChip(
                                 selected = false,
@@ -180,26 +201,64 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                         }
                     }
 
-                    if (categories.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Belum ada kategori. Tambahkan produk terlebih dahulu.",
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Search Bar untuk menampilkan semua produk saat "Semua" aktif
+                    ProductSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Daftar semua produk difilter oleh query saja
+                    val filteredProducts = viewModel.products.filter { product ->
+                        query.isBlank() || product.name.contains(query, ignoreCase = true)
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(filteredProducts) { product ->
+                            ProductCard(
+                                product = product,
+                                onEdit = {
+                                    navController.navigate(Screen.TambahProduk.createRoute(product.id))
+                                },
+                                onDelete = { productToDelete = product }
                             )
                         }
                     }
                 } else {
-                    // Deretan chip kategori (tetap tampil) dengan state terpilih
+                    // Deretan chip kategori (tetap tampil) dengan state terpilih + opsi "Semua"
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Chip "Semua"
+                        item {
+                            FilterChip(
+                                selected = selectedCategory == null,
+                                onClick = {
+                                    selectedCategory = null
+                                    query = ""
+                                },
+                                label = { Text("Semua") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
                         items(categories) { category ->
                             FilterChip(
                                 selected = selectedCategory == category,
@@ -229,13 +288,10 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Daftar produk berdasarkan kategori + query
+                    // Daftar produk berdasarkan kategori (atau semua) + query
                     val filteredProducts = viewModel.products.filter { product ->
-                        (product.category.equals(selectedCategory, ignoreCase = true)) &&
-                                (
-                                    query.isBlank() ||
-                                            product.name.contains(query, ignoreCase = true)
-                                )
+                        (selectedCategory == null || product.category.equals(selectedCategory, ignoreCase = true)) &&
+                                (query.isBlank() || product.name.contains(query, ignoreCase = true))
                     }
 
                     LazyColumn(
@@ -251,12 +307,55 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                                 onEdit = {
                                     navController.navigate(Screen.TambahProduk.createRoute(product.id))
                                 },
-                                onDelete = { viewModel.deleteProduct(product) }
+                                onDelete = { productToDelete = product }
                             )
                         }
                     }
                 }
             }
+        }
+
+        // Konfirmasi hapus produk (lebih kontekstual & menarik)
+        val pending = productToDelete
+        if (pending != null) {
+            AlertDialog(
+                onDismissRequest = { productToDelete = null },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteProduct(pending)
+                            notifier?.show("Produk dihapus", NotificationType.Success, 1500)
+                            productToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Hapus") }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { productToDelete = null },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Batal") }
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                title = { Text("Hapus Produk", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
+                text = { Text("Apakah Anda yakin ingin menghapus ${pending.name} (Kategori: ${pending.category})?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                shape = RoundedCornerShape(20.dp),
+                containerColor = Color.White,
+                tonalElevation = 6.dp
+            )
         }
     }
 }

@@ -23,6 +23,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mykasir.feature_manajemen_produk.navigation.ManajemenProdukNav
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.feature_transaksi.navigation.TransaksiNav
+import com.example.mykasir.feature_laporan.LaporanScreen
+import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
+import com.example.mykasir.feature_laporan.SalesReportPage
+import com.example.mykasir.feature_laporan.ChartPage
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
@@ -40,8 +44,9 @@ val kasirNavItems = listOf(
 fun MainAppHost() {
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
-    // Hoist ProductViewModel ke level host agar dibagikan ke fitur Manajemen Produk & Transaksi
+    // Hoist ViewModel agar dapat dibagikan lintas fitur
     val productViewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val transaksiViewModel: TransaksiViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     Scaffold(
         bottomBar = {
@@ -73,9 +78,36 @@ fun MainAppHost() {
             // Rute untuk tab-tab lainnya
             composable("wallet") {
                 val txNavController = rememberNavController()
-                TransaksiNav(hostNavController = txNavController, productViewModel = productViewModel)
+                TransaksiNav(
+                    hostNavController = txNavController,
+                    productViewModel = productViewModel,
+                    transaksiViewModel = transaksiViewModel
+                )
             }
-            composable("docs") { PlaceholderScreen("Halaman Dokumen") }
+            composable("docs") {
+                val laporanNav = rememberNavController()
+                NavHost(navController = laporanNav, startDestination = "laporan_home") {
+                    composable("laporan_home") {
+                        LaporanScreen(
+                            viewModel = transaksiViewModel,
+                            onOpenLaporan = { laporanNav.navigate("sales_report") },
+                            onOpenGrafik = { laporanNav.navigate("chart_page") }
+                        )
+                    }
+                    composable("sales_report") {
+                        SalesReportPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
+                    }
+                    composable("chart_page") {
+                        ChartPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
+                    }
+                }
+            }
             composable("home") { PlaceholderScreen("Halaman Home") }
         }
     }
