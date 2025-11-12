@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.mykasir.core_ui.LocalNotifier
+import com.example.mykasir.core_ui.NotificationType
 import com.example.mykasir.core_ui.SimpleTopBar
 import com.example.mykasir.feature_manajemen_produk.model.Product
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
@@ -33,6 +35,8 @@ fun TambahProdukScreen(
     viewModel: ProductViewModel,
     productId: Long? // <-- 1. TERIMA productId
 ) {
+    val notifier = LocalNotifier.current
+
     // Tentukan apakah ini mode Edit
     val isEditMode = productId != null
 
@@ -123,6 +127,7 @@ fun TambahProdukScreen(
                                 imageUri = selectedImageUri?.toString()
                             )
                             viewModel.updateProduct(updatedProduct)
+                            notifier?.show("Produk berhasil diperbarui", NotificationType.Success, 1800)
                         } else {
                             // Jika Mode Tambah, panggil addProduct
                             val newProduct = Product(
@@ -135,6 +140,7 @@ fun TambahProdukScreen(
                                 imageUri = selectedImageUri?.toString()
                             )
                             viewModel.addProduct(newProduct)
+                            notifier?.show("Produk berhasil disimpan", NotificationType.Success, 1800)
                         }
                         // ---------------------------------
 

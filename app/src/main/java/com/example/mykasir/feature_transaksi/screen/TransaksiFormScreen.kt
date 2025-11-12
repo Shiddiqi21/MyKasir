@@ -1,5 +1,6 @@
 package com.example.mykasir.feature_transaksi.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +50,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TextFieldDefaults
+import com.example.mykasir.core_ui.LocalNotifier
+import com.example.mykasir.core_ui.NotificationType
+import com.example.mykasir.feature_transaksi.model.TransactionItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,12 +62,14 @@ fun TransaksiFormScreen(
     onBack: () -> Unit,
     onSaved: (Long) -> Unit
 ) {
+    val notifier = LocalNotifier.current
     var showCustomerDialog by remember { mutableStateOf(false) }
     var customerNameInput by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var showCartSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var searchQuery by remember { mutableStateOf("") }
+    var itemToDelete by remember { mutableStateOf<TransactionItem?>(null) }
     Scaffold(
         topBar = {
             SimpleTopBar(
@@ -75,6 +82,41 @@ fun TransaksiFormScreen(
                         IconButton(onClick = { showCartSheet = true }) {
                             Icon(Icons.Filled.ShoppingCart, contentDescription = "Keranjang", tint = MaterialTheme.colorScheme.onPrimary)
                         }
+
+            // Konfirmasi hapus item keranjang
+            val pendingDelete = itemToDelete
+            if (pendingDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { itemToDelete = null },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.removeItem(pendingDelete)
+                                notifier?.show("Item dihapus", NotificationType.Success, 1200)
+                                itemToDelete = null
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) { Text("Hapus") }
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = { itemToDelete = null },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(10.dp)
+                        ) { Text("Batal") }
+                    },
+                    icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    title = { Text("Hapus Item Keranjang", fontWeight = FontWeight.Bold) },
+                    text = { Text("Apakah Anda yakin ingin menghapus ${pendingDelete.productName} dari keranjang?") },
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = Color.White,
+                    tonalElevation = 6.dp
+                )
+            }
                     }
                 }
             )
@@ -105,6 +147,21 @@ fun TransaksiFormScreen(
                     val categories = productViewModel.products.map { it.category }.filter { it.isNotBlank() }.distinct()
                     if (categories.isNotEmpty()) {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Chip "Semua"
+                            item {
+                                FilterChip(
+                                    selected = selectedCategory == null,
+                                    onClick = { selectedCategory = null },
+                                    label = { Text("Semua") },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                )
+                            }
+                            // Chip kategori lain
                             items(categories) { cat ->
                                 FilterChip(
                                     selected = selectedCategory == cat,
@@ -164,7 +221,10 @@ fun TransaksiFormScreen(
                                 price = p.price,
                                 stock = p.stock,
                                 imageUri = p.imageUri,
-                                onAdd = { viewModel.addOrIncreaseItem(p.name, p.price, p.stock) }
+                                onAdd = {
+                                    viewModel.addOrIncreaseItem(p.name, p.price, p.stock)
+                                    notifier?.show("Produk ditambahkan ke keranjang", NotificationType.Success, 1500)
+                                }
                             )
                         }
                     }
@@ -190,6 +250,7 @@ fun TransaksiFormScreen(
                                     }
                                     viewModel.resetForm()
                                     showCustomerDialog = false
+                                    notifier?.show("Transaksi berhasil disimpan", NotificationType.Success, 2000)
                                     onSaved(customerId)
                                 }
                             }
@@ -256,7 +317,7 @@ fun TransaksiFormScreen(
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text("Subtotal", style = MaterialTheme.typography.labelSmall)
                                             Text(formatRupiah(it.unitPrice * it.quantity), fontWeight = FontWeight.Bold)
-                                            TextButton(onClick = { viewModel.removeItem(it) }) { Text("Hapus", color = MaterialTheme.colorScheme.error) }
+                                            TextButton(onClick = { itemToDelete = it }) { Text("Hapus", color = MaterialTheme.colorScheme.error) }
                                         }
                                     }
                                 }

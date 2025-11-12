@@ -1,7 +1,6 @@
 package com.example.mykasir.feature_transaksi.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,8 +22,12 @@ sealed class TxRoute(val route: String) {
 }
 
 @Composable
-fun TransaksiNav(hostNavController: NavHostController, productViewModel: ProductViewModel) {
-    val txViewModel: TransaksiViewModel = viewModel()
+fun TransaksiNav(
+    hostNavController: NavHostController,
+    productViewModel: ProductViewModel,
+    transaksiViewModel: TransaksiViewModel
+) {
+    val txViewModel: TransaksiViewModel = transaksiViewModel
 
     NavHost(
         navController = hostNavController,
