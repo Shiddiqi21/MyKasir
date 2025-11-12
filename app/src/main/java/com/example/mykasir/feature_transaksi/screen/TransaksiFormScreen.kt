@@ -28,6 +28,26 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TextFieldDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,24 +57,24 @@ fun TransaksiFormScreen(
     onBack: () -> Unit,
     onSaved: (Long) -> Unit
 ) {
-    val canSaveTop = viewModel.customerNameText.isNotBlank() && viewModel.currentItems.isNotEmpty()
+    var showCustomerDialog by remember { mutableStateOf(false) }
+    var customerNameInput by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var showCartSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var searchQuery by remember { mutableStateOf("") }
     Scaffold(
         topBar = {
             SimpleTopBar(
                 title = "Transaksi",
                 onBackPress = onBack,
                 actions = {
-                    TextButton(
-                        onClick = {
-                            val customerId = viewModel.saveTransaction(viewModel.customerNameText)
-                            viewModel.resetForm()
-                            onSaved(customerId)
-                        },
-                        enabled = canSaveTop,
-                    ) {
-                        Icon(imageVector = Icons.Filled.Save, contentDescription = "Simpan", tint = MaterialTheme.colorScheme.onPrimary)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Simpan", color = MaterialTheme.colorScheme.onPrimary)
+                    BadgedBox(badge = {
+                        if (viewModel.currentItems.isNotEmpty()) Badge { Text(viewModel.currentItems.size.toString()) }
+                    }) {
+                        IconButton(onClick = { showCartSheet = true }) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Keranjang", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 }
             )
@@ -65,11 +85,11 @@ fun TransaksiFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(20.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Kartu input
+            // Kategori & Galeri Produk
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -78,171 +98,256 @@ fun TransaksiFormScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LabeledText(text = "Nama Pelanggan")
-                    OutlinedTextField(
-                        value = viewModel.customerNameText,
-                        onValueChange = { viewModel.customerNameText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    LabeledText(text = "Nama Produk")
-                    var menuExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = menuExpanded,
-                        onExpandedChange = { menuExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = viewModel.productName,
-                            onValueChange = {
-                                viewModel.productName = it
-                                // reset harga jika user mengubah ketikan manual
-                                viewModel.unitPriceText = ""
-                            },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            singleLine = true,
-                            readOnly = false,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded)
-                            }
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            val query = viewModel.productName.trim()
-                            val filtered = if (query.isEmpty()) productViewModel.products
-                            else productViewModel.products.filter { p ->
-                                p.name.contains(query, ignoreCase = true)
-                            }
-                            filtered.forEach { p ->
-                                DropdownMenuItem(
-                                    text = { Text(p.name) },
+                    LabeledText(text = "Kategori Produk")
+                    val categories = productViewModel.products.map { it.category }.filter { it.isNotBlank() }.distinct()
+                    if (categories.isNotEmpty()) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(categories) { cat ->
+                                FilterChip(
+                                    selected = selectedCategory == cat,
                                     onClick = {
-                                        viewModel.productName = p.name
-                                        viewModel.unitPriceText = p.price.toString()
-                                        menuExpanded = false
-                                    }
-                                )
-                            }
-                            if (filtered.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("Tidak ada hasil") },
-                                    onClick = { },
-                                    enabled = false
+                                        selectedCategory = if (selectedCategory == cat) null else cat
+                                    },
+                                    label = { Text(cat) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
                         }
                     }
 
-                    LabeledText(text = "Harga Satuan")
+                    // Search bar untuk filter produk
                     OutlinedTextField(
-                        value = viewModel.unitPriceText,
-                        onValueChange = {},
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        readOnly = true,
-                        placeholder = { Text("Pilih produk terlebih dahulu") }
+                        placeholder = { Text("Cari produk...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
 
-                    LabeledText(text = "Jumlah Barang")
-                    OutlinedTextField(
-                        value = viewModel.quantityText,
-                        onValueChange = { viewModel.quantityText = it.filter { ch -> ch.isDigit() } },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
+                    val list = remember(selectedCategory, productViewModel.products, searchQuery) {
+                        val base = if (selectedCategory.isNullOrBlank()) productViewModel.products else productViewModel.products.filter { it.category.equals(selectedCategory, true) }
+                        if (searchQuery.isBlank()) base else base.filter { it.name.contains(searchQuery, ignoreCase = true) }
+                    }
 
-                    // Tombol tambah item ke keranjang
-                    val canAddItem = viewModel.productName.isNotBlank() && viewModel.unitPrice > 0 && viewModel.quantity > 0
-                    Button(
-                        onClick = { viewModel.addItemFromForm() },
-                        enabled = canAddItem,
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(120.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
-                    ) { Text("Tambah ke Daftar") }
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(list) { p ->
+                            ProductGridItem(
+                                name = p.name,
+                                price = p.price,
+                                stock = p.stock,
+                                imageUri = p.imageUri,
+                                onAdd = { viewModel.addOrIncreaseItem(p.name, p.price, p.stock) }
+                            )
+                        }
+                    }
                 }
             }
 
-            // Ringkasan: daftar item yang ditambahkan dan total
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(1.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    if (viewModel.currentItems.isEmpty()) {
-                        Text("Belum ada item dalam daftar.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                    } else {
-                        androidx.compose.foundation.lazy.LazyColumn(
-                            modifier = Modifier.heightIn(max = 260.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            items(viewModel.currentItems.size) { index ->
-                                val it = viewModel.currentItems[index]
-                                Divider()
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        SummaryRow(label = "Nama Produk", value = it.productName)
-                                        SummaryRow(label = "Harga Satuan", value = formatRupiah(it.unitPrice))
-                                        SummaryRow(label = "Jumlah Barang", value = it.quantity.toString())
-                                        SummaryRow(label = "Subtotal", value = formatRupiah(it.unitPrice * it.quantity))
+            if (showCustomerDialog) {
+                AlertDialog(
+                    onDismissRequest = { showCustomerDialog = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val name = customerNameInput.trim()
+                                if (name.isNotEmpty()) {
+                                    val customerId = viewModel.saveTransaction(name)
+                                    // Kurangi stok produk sesuai item di keranjang (yang barusan disimpan)
+                                    viewModel.transactionsFor(customerId).lastOrNull()?.items?.forEach { item ->
+                                        val p2 = productViewModel.products.firstOrNull { it.name.equals(item.productName, ignoreCase = true) }
+                                        if (p2 != null) {
+                                            val newStock = (p2.stock - item.quantity).coerceAtLeast(0)
+                                            productViewModel.updateProduct(p2.copy(stock = newStock))
+                                        }
                                     }
-                                    OutlinedButton(
-                                        onClick = { viewModel.removeItem(it) },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = MaterialTheme.colorScheme.error
-                                        )
+                                    viewModel.resetForm()
+                                    showCustomerDialog = false
+                                    onSaved(customerId)
+                                }
+                            }
+                        ) { Text("Simpan") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showCustomerDialog = false }) { Text("Batal") }
+                    },
+                    title = { Text("Nama Pelanggan") },
+                    text = {
+                        OutlinedTextField(
+                            value = customerNameInput,
+                            onValueChange = { customerNameInput = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            placeholder = { Text("Masukkan nama pelanggan") }
+                        )
+                    }
+                )
+            }
+
+            if (showCartSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showCartSheet = false },
+                    sheetState = sheetState
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("Keranjang", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        if (viewModel.currentItems.isEmpty()) {
+                            Text("Keranjang masih kosong.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        } else {
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.heightIn(max = 360.dp)
+                            ) {
+                                items(viewModel.currentItems.size) { index ->
+                                    val it = viewModel.currentItems[index]
+                                    Divider()
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(imageVector = Icons.Filled.Delete, contentDescription = "Hapus")
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Hapus")
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(it.productName, fontWeight = FontWeight.SemiBold)
+                                            Text(formatRupiah(it.unitPrice))
+                                            val p = productViewModel.products.firstOrNull { p -> p.name.equals(it.productName, true) }
+                                            val max = p?.stock ?: Int.MAX_VALUE
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                OutlinedIconButton(onClick = { viewModel.changeQuantity(it, -1, max) }, enabled = it.quantity > 1) {
+                                                    Icon(Icons.Filled.Remove, contentDescription = null)
+                                                }
+                                                Text(it.quantity.toString())
+                                                OutlinedIconButton(onClick = { viewModel.changeQuantity(it, +1, max) }, enabled = it.quantity < max) {
+                                                    Icon(Icons.Filled.Add, contentDescription = null)
+                                                }
+                                            }
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text("Subtotal", style = MaterialTheme.typography.labelSmall)
+                                            Text(formatRupiah(it.unitPrice * it.quantity), fontWeight = FontWeight.Bold)
+                                            TextButton(onClick = { viewModel.removeItem(it) }) { Text("Hapus", color = MaterialTheme.colorScheme.error) }
+                                        }
                                     }
                                 }
                             }
+                            Divider()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Total", style = MaterialTheme.typography.titleMedium)
+                                Text(formatRupiah(viewModel.total), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                            Button(
+                                onClick = {
+                                    showCartSheet = false
+                                    customerNameInput = ""
+                                    showCustomerDialog = true
+                                },
+                                enabled = viewModel.currentItems.isNotEmpty(),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("Lanjutkan") }
                         }
-                        Divider()
-                    }
-
-                    Divider()
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Total",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = formatRupiah(viewModel.total),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun ProductGridItem(
+    name: String,
+    price: Int,
+    stock: Int,
+    imageUri: String?,
+    onAdd: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .align(Alignment.CenterHorizontally)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!imageUri.isNullOrBlank()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            Text(name, maxLines = 1)
+            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(formatRupiah(price), style = MaterialTheme.typography.labelMedium)
+                    val stockText = if (stock > 0) "Stok: $stock" else "Habis"
+                    val stockColor = if (stock > 0) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f) else MaterialTheme.colorScheme.error
+                    Text(stockText, style = MaterialTheme.typography.labelSmall, color = stockColor)
+                }
+                Button(
+                    onClick = onAdd,
+                    enabled = stock > 0,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.heightIn(min = 32.dp)
+                ) {
+                    Text("Tambah")
+                }
+            }
         }
     }
 }

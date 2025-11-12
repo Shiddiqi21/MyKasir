@@ -14,6 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mykasir.feature_manajemen_produk.model.Product
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
 
 @Composable
 fun ProductCard(
@@ -35,24 +39,46 @@ fun ProductCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                // 🔹 Nama Produk
-                Text(
-                    product.name,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF333333)
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                if (!product.imageUri.isNullOrBlank()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(product.imageUri),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFECECEC))
+                    )
+                }
 
-                // 🔹 Kategori Produk
-                Text(
-                    text = "Kategori: ${product.category}",
-                    color = Color(0xFF6E6E6E),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Spacer(modifier = Modifier.width(12.dp))
 
-                // 🔹 Harga & Stok
-                Text("Harga: Rp${product.price}", color = Color.Gray)
-                Text("Stok: ${product.stock}", color = Color.Gray)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        product.name,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF333333)
+                    )
+
+                    Text(
+                        text = "Kategori: ${product.category}",
+                        color = Color(0xFF6E6E6E),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text("Harga: Rp${product.price}", color = Color.Gray)
+                    Text("Stok: ${product.stock}", color = Color.Gray)
+                }
             }
 
             Row {
@@ -66,3 +92,4 @@ fun ProductCard(
         }
     }
 }
+

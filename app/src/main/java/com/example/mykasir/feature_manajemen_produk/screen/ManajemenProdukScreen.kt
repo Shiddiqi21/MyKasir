@@ -3,6 +3,7 @@ package com.example.mykasir.feature_manajemen_produk.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 @Composable
 fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewModel) {
     var query by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -139,37 +141,119 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     .fillMaxSize()
                     .padding(top = 20.dp)
             ) {
+                // Kategori unik dari produk
+                val categories = viewModel.products
+                    .map { it.category }
+                    .filter { it.isNotBlank() }
+                    .distinct()
 
-                // --- Search Bar ---
-                ProductSearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
+                // Jika kategori belum dipilih, tampilkan pemilihan kategori terlebih dahulu
+                if (selectedCategory == null) {
+                    Text(
+                        text = "Pilih Kategori",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // --- Daftar Produk (LazyColumn) ---
-                val filteredProducts = viewModel.products.filter { product ->
-                    product.name.contains(query, ignoreCase = true) ||
-                            product.category.contains(query, ignoreCase = true)
-                }
+                    // Deretan chip kategori
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(categories) { category ->
+                            FilterChip(
+                                selected = false,
+                                onClick = { selectedCategory = category },
+                                label = { Text(category) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
+                    }
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(filteredProducts) { product ->
-                        ProductCard(
-                            product = product,
-                            onEdit = {
-                                navController.navigate(Screen.TambahProduk.createRoute(product.id))
-                            },
-                            onDelete = { viewModel.deleteProduct(product) }
-                        )
+                    if (categories.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Belum ada kategori. Tambahkan produk terlebih dahulu.",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                } else {
+                    // Deretan chip kategori (tetap tampil) dengan state terpilih
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(categories) { category ->
+                            FilterChip(
+                                selected = selectedCategory == category,
+                                onClick = {
+                                    selectedCategory = if (selectedCategory == category) null else category
+                                    if (selectedCategory == null) query = ""
+                                },
+                                label = { Text(category) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Search Bar (aktif setelah kategori dipilih)
+                    ProductSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Daftar produk berdasarkan kategori + query
+                    val filteredProducts = viewModel.products.filter { product ->
+                        (product.category.equals(selectedCategory, ignoreCase = true)) &&
+                                (
+                                    query.isBlank() ||
+                                            product.name.contains(query, ignoreCase = true)
+                                )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(filteredProducts) { product ->
+                            ProductCard(
+                                product = product,
+                                onEdit = {
+                                    navController.navigate(Screen.TambahProduk.createRoute(product.id))
+                                },
+                                onDelete = { viewModel.deleteProduct(product) }
+                            )
+                        }
                     }
                 }
             }

@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +38,8 @@ fun SimpleTopBar(
             containerColor = MaterialTheme.colorScheme.primary, 
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary, 
             titleContentColor = MaterialTheme.colorScheme.onPrimary 
-        )
+        ),
+        // Hilangkan padding tambahan dari status bar agar konten tidak terlalu ke bawah
+        windowInsets = WindowInsets(0, 0, 0, 0)
     )
 }

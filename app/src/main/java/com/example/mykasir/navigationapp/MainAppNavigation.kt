@@ -40,6 +40,8 @@ val kasirNavItems = listOf(
 fun MainAppHost() {
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
+    // Hoist ProductViewModel ke level host agar dibagikan ke fitur Manajemen Produk & Transaksi
+    val productViewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     Scaffold(
         bottomBar = {
@@ -62,8 +64,6 @@ fun MainAppHost() {
                 // Di sinilah kita memanggil NavGraph dari fitur Anda.
                 // Kita buat NavController terpisah untuk alur internal fitur tsb.
                 val featureNavController = rememberNavController()
-                val productViewModel: ProductViewModel = viewModel()
-
                 ManajemenProdukNav(
                     navController = featureNavController,
                     viewModel = productViewModel
@@ -73,7 +73,7 @@ fun MainAppHost() {
             // Rute untuk tab-tab lainnya
             composable("wallet") {
                 val txNavController = rememberNavController()
-                TransaksiNav(hostNavController = txNavController)
+                TransaksiNav(hostNavController = txNavController, productViewModel = productViewModel)
             }
             composable("docs") { PlaceholderScreen("Halaman Dokumen") }
             composable("home") { PlaceholderScreen("Halaman Home") }

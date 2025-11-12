@@ -78,6 +78,29 @@ class TransaksiViewModel : ViewModel() {
         currentItems.remove(item)
     }
 
+    fun changeQuantity(item: TransactionItem, delta: Int, maxStock: Int) {
+        val idx = currentItems.indexOfFirst { it.productName == item.productName && it.unitPrice == item.unitPrice }
+        if (idx >= 0) {
+            val current = currentItems[idx]
+            val newQty = (current.quantity + delta).coerceIn(1, if (maxStock > 0) maxStock else Int.MAX_VALUE)
+            if (newQty != current.quantity) {
+                currentItems[idx] = current.copy(quantity = newQty)
+            }
+        }
+    }
+
+    fun addOrIncreaseItem(productName: String, unitPrice: Int, maxStock: Int) {
+        if (productName.isBlank() || unitPrice <= 0 || maxStock <= 0) return
+        val idx = currentItems.indexOfFirst { it.productName.equals(productName, ignoreCase = true) && it.unitPrice == unitPrice }
+        if (idx >= 0) {
+            val item = currentItems[idx]
+            val newQty = (item.quantity + 1).coerceAtMost(maxStock)
+            currentItems[idx] = item.copy(quantity = newQty)
+        } else {
+            currentItems.add(TransactionItem(productName = productName, unitPrice = unitPrice, quantity = 1))
+        }
+    }
+
     fun saveTransaction(customerName: String): Long {
         val customer = findOrCreateCustomerByName(customerName)
         if (currentItems.isEmpty()) return customer.id

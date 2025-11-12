@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.example.mykasir.feature_auth.screen.LoginScreen
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
+import com.example.mykasir.feature_landing.LandingScreen
+import com.example.mykasir.navigationapp.MainAppHost
 
 object Graph {
     const val ROOT = "root_graph"
@@ -22,8 +24,18 @@ fun RootNavGraph() {
     NavHost(
         navController = navController,
         route = Graph.ROOT,
-        startDestination = Graph.AUTH // Mulai dari alur Auth
+        startDestination = "landing" // Mulai dari Landing terlebih dahulu
     ) {
+        // Landing Screen
+        composable(route = "landing") {
+            LandingScreen(
+                onStart = {
+                    navController.navigate(Graph.AUTH) {
+                        popUpTo("landing") { inclusive = true }
+                    }
+                }
+            )
+        }
         // Alur Autentikasi (Login)
         navigation(
             route = Graph.AUTH,

@@ -23,9 +23,8 @@ sealed class TxRoute(val route: String) {
 }
 
 @Composable
-fun TransaksiNav(hostNavController: NavHostController) {
+fun TransaksiNav(hostNavController: NavHostController, productViewModel: ProductViewModel) {
     val txViewModel: TransaksiViewModel = viewModel()
-    val productViewModel: ProductViewModel = viewModel()
 
     NavHost(
         navController = hostNavController,

@@ -15,5 +15,6 @@ data class Transaction(
     val id: Long = System.currentTimeMillis(),
     val customerId: Long,
     val items: List<TransactionItem>,
-    val total: Int
+    val total: Int,
+    val timestamp: Long = System.currentTimeMillis()
 )
