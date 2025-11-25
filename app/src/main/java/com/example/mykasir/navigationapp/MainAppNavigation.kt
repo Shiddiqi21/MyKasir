@@ -22,13 +22,18 @@ import androidx.navigation.compose.rememberNavController
 // --- Import Fitur Anda ---
 import com.example.mykasir.feature_manajemen_produk.navigation.ManajemenProdukNav
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
+import com.example.mykasir.feature_transaksi.navigation.TransaksiNav
+import com.example.mykasir.feature_laporan.LaporanScreen
+import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
+import com.example.mykasir.feature_laporan.SalesReportPage
+import com.example.mykasir.feature_laporan.ChartPage
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
     NavItem("Home", Icons.Filled.Home, "home"),
+    NavItem("Package", Icons.Filled.Inventory2, "package"),
     NavItem("Wallet", Icons.Filled.Wallet, "wallet"),
-    NavItem("Docs", Icons.Filled.Description, "docs"),
-    NavItem("Package", Icons.Filled.Inventory2, "package")
+    NavItem("Docs", Icons.Filled.Description, "docs")
 )
 
 /**
@@ -39,6 +44,9 @@ val kasirNavItems = listOf(
 fun MainAppHost() {
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
+    // Hoist ViewModel agar dapat dibagikan lintas fitur
+    val productViewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val transaksiViewModel: TransaksiViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     Scaffold(
         bottomBar = {
@@ -61,8 +69,6 @@ fun MainAppHost() {
                 // Di sinilah kita memanggil NavGraph dari fitur Anda.
                 // Kita buat NavController terpisah untuk alur internal fitur tsb.
                 val featureNavController = rememberNavController()
-                val productViewModel: ProductViewModel = viewModel()
-
                 ManajemenProdukNav(
                     navController = featureNavController,
                     viewModel = productViewModel
@@ -70,8 +76,38 @@ fun MainAppHost() {
             }
 
             // Rute untuk tab-tab lainnya
-            composable("wallet") { PlaceholderScreen("Halaman Dompet") }
-            composable("docs") { PlaceholderScreen("Halaman Dokumen") }
+            composable("wallet") {
+                val txNavController = rememberNavController()
+                TransaksiNav(
+                    hostNavController = txNavController,
+                    productViewModel = productViewModel,
+                    transaksiViewModel = transaksiViewModel
+                )
+            }
+            composable("docs") {
+                val laporanNav = rememberNavController()
+                NavHost(navController = laporanNav, startDestination = "laporan_home") {
+                    composable("laporan_home") {
+                        LaporanScreen(
+                            viewModel = transaksiViewModel,
+                            onOpenLaporan = { laporanNav.navigate("sales_report") },
+                            onOpenGrafik = { laporanNav.navigate("chart_page") }
+                        )
+                    }
+                    composable("sales_report") {
+                        SalesReportPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
+                    }
+                    composable("chart_page") {
+                        ChartPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
+                    }
+                }
+            }
             composable("home") { PlaceholderScreen("Halaman Home") }
         }
     }

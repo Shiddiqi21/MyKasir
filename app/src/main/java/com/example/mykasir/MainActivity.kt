@@ -5,8 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
-import com.example.mykasir.navigationapp.MainAppHost // <-- IMPORT BARU
+import com.example.mykasir.navigationapp.RootNavGraph // <-- Ganti dari MainAppHost
 import com.example.mykasir.ui.theme.MyKasirTheme
+import com.example.mykasir.core_ui.ProvideNotifier
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,8 +22,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyKasirApp() {
     MyKasirTheme {
-        // Surface, ViewModel, dan NavController sudah pindah ke dalam MainAppHost
-        // Jadi di sini kita cukup memanggil MainAppHost
-        MainAppHost()
+        ProvideNotifier {
+            RootNavGraph()
+        }
     }
 }
