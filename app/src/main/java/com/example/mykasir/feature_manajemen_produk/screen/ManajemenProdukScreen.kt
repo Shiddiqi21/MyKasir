@@ -99,7 +99,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(50.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
@@ -120,7 +120,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(50.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
@@ -174,6 +174,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                             FilterChip(
                                 selected = true,
                                 onClick = { selectedCategory = null },
+                                shape = RoundedCornerShape(50.dp),
                                 label = { Text("Semua") },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -188,6 +189,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                             FilterChip(
                                 selected = false,
                                 onClick = { selectedCategory = category },
+                                shape = RoundedCornerShape(50.dp),
                                 label = { Text(category) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -205,7 +207,9 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     ProductSearchBar(
                         query = query,
                         onQueryChange = { query = it },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 44.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -246,6 +250,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                                     selectedCategory = null
                                     query = ""
                                 },
+                                shape = RoundedCornerShape(50.dp),
                                 label = { Text("Semua") },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -262,6 +267,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                                     selectedCategory = if (selectedCategory == category) null else category
                                     if (selectedCategory == null) query = ""
                                 },
+                                shape = RoundedCornerShape(50.dp),
                                 label = { Text(category) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -279,7 +285,9 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     ProductSearchBar(
                         query = query,
                         onQueryChange = { query = it },
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .heightIn(max = 44.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -353,6 +361,6 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                 tonalElevation = 6.dp
             )
         }
-    }
+    }   
 }
 

@@ -71,16 +71,22 @@ fun ProductCard(
                         color = Color(0xFF333333)
                     )
 
+                   Text(
+                        text = "Rp${product.price}",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
                     Text(
                         text = "Kategori: ${product.category}",
                         color = Color(0xFF6E6E6E),
                         style = MaterialTheme.typography.bodySmall
                     )
-
                     Text(
-                        text = "Harga: Rp${product.price} Stok: ${product.stock}",
+                        text = "Stok: ${product.stock}",
                         color = Color.Gray,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
             }
