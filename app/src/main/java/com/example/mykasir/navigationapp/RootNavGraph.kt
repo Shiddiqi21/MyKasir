@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.example.mykasir.feature_auth.screen.LoginScreen
+import com.example.mykasir.feature_auth.screen.RegisterScreen
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
 import com.example.mykasir.feature_landing.LandingScreen
 import com.example.mykasir.navigationapp.MainAppHost
@@ -53,6 +54,17 @@ fun RootNavGraph() {
                                 inclusive = true
                             }
                         }
+                    },
+                    onSignUpClick = {
+                        navController.navigate("register")
+                    }
+                )
+            }
+            composable(route = "register") {
+                RegisterScreen(
+                    onBack = { navController.popBackStack() },
+                    onRegisterSuccess = {
+                        navController.popBackStack()
                     }
                 )
             }

@@ -23,6 +23,7 @@ import com.example.mykasir.R // Pastikan R di-import
 import com.example.mykasir.feature_auth.viewmodel.LoginUiState
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
 import androidx.compose.ui.layout.ContentScale
+
 /**
  * Layar Login.
  * @param onLoginSuccess Lambda yang akan dipanggil saat login berhasil.
@@ -31,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onSignUpClick: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -202,7 +204,7 @@ fun LoginScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable {
-                        // TODO: Navigasi ke Layar Sign Up
+                        onSignUpClick()
                     }
                 )
             }

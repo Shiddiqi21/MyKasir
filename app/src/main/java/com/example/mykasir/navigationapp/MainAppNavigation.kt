@@ -30,10 +30,10 @@ import com.example.mykasir.feature_laporan.ChartPage
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
-    NavItem("Home", Icons.Filled.Home, "home"),
-    NavItem("Package", Icons.Filled.Inventory2, "package"),
-    NavItem("Wallet", Icons.Filled.Wallet, "wallet"),
-    NavItem("Docs", Icons.Filled.Description, "docs")
+    NavItem("Beranda", Icons.Filled.Home, "home"),
+    NavItem("Stok", Icons.Filled.Inventory2, "package"),
+    NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
+    NavItem("Laporan", Icons.Filled.Description, "docs")
 )
 
 /**

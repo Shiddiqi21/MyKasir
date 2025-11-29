@@ -146,7 +146,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 20.dp)
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
             ) {
                 // Kategori unik dari produk
                 val categories = viewModel.products
@@ -159,17 +159,14 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     Text(
                         text = "Pilih Kategori",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Deretan chip kategori (dengan opsi "Semua")
                     LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Chip "Semua" untuk menampilkan semua produk
@@ -208,7 +205,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     ProductSearchBar(
                         query = query,
                         onQueryChange = { query = it },
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -219,9 +216,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     }
 
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         contentPadding = PaddingValues(bottom = 16.dp)
                     ) {

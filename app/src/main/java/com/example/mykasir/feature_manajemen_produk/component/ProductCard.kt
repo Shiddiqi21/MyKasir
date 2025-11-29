@@ -22,20 +22,20 @@ import coil.compose.rememberAsyncImagePainter
 @Composable
 fun ProductCard(
     product: Product,
+    modifier: Modifier = Modifier,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -48,14 +48,14 @@ fun ProductCard(
                         painter = rememberAsyncImagePainter(product.imageUri),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFECECEC))
                     )
@@ -65,8 +65,9 @@ fun ProductCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        product.name,
-                        fontWeight = FontWeight.Bold,
+                        text = product.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF333333)
                     )
 
@@ -76,8 +77,11 @@ fun ProductCard(
                         style = MaterialTheme.typography.bodySmall
                     )
 
-                    Text("Harga: Rp${product.price}", color = Color.Gray)
-                    Text("Stok: ${product.stock}", color = Color.Gray)
+                    Text(
+                        text = "Harga: Rp${product.price} Stok: ${product.stock}",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 

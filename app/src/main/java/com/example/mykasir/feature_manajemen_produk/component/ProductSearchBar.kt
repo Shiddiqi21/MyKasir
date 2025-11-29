@@ -9,6 +9,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +24,8 @@ fun ProductSearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Cari Produk") }, // Sesuai desain Anda
+        placeholder = { Text("Cari Produk", style = MaterialTheme.typography.bodySmall) },
+
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
@@ -38,8 +40,8 @@ fun ProductSearchBar(
             unfocusedContainerColor = Color.White,
             cursorColor = Color(0xFF6EC1E4)
         ),
-        shape = RoundedCornerShape(20.dp),
-        singleLine = true, // Tambahan bagus agar tidak jadi multi-baris
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
         modifier = modifier // <-- 2. TERAPKAN MODIFIER DARI PARAMETER
             .fillMaxWidth()
             .background(Color.Transparent)

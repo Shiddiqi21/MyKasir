@@ -50,11 +50,17 @@ fun BottomNavBar(
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.label,
-                        // Ukuran ikon tetap sesuai permintaan Anda
-                        modifier = Modifier.size(37.dp)
+                        // Ikon sedikit lebih kecil agar tampak modern dan minimalis
+                        modifier = Modifier.size(26.dp)
                     )
                 },
-                label = null, // Tidak pakai label
+                label = {
+                    Text(
+                        text = item.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
+                },
                 colors = NavigationBarItemDefaults.colors(
                     // Ikon aktif: Mengambil warna teks utama (hitam) dari Tema
                     selectedIconColor = MaterialTheme.colorScheme.onSurface,
