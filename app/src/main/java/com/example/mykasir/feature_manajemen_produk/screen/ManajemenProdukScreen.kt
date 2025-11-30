@@ -55,7 +55,8 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
 
             // --- Baris Atas: Logo, Judul, Profil ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth(),                
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -68,12 +69,23 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     modifier = Modifier.size(70.dp)
                 )
 
-                Text(
-                    text = "Manajemen Produk",
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Manajemen Produk",
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Kelola seluruh produk toko",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    )
+                }
 
                 IconButton(onClick = { /* Arahkan ke profil */ }) {
                     // --- 2. UBAH DI SINI: Gunakan painterResource ---
@@ -209,7 +221,6 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                         onQueryChange = { query = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 44.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -238,8 +249,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                     // Deretan chip kategori (tetap tampil) dengan state terpilih + opsi "Semua"
                     LazyRow(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
+                            .fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Chip "Semua"
@@ -286,8 +296,7 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                         query = query,
                         onQueryChange = { query = it },
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
-                            .heightIn(max = 44.dp)
+                            .fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -324,6 +333,36 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
         if (pending != null) {
             AlertDialog(
                 onDismissRequest = { productToDelete = null },
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                                shape = RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Hapus produk?",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Yakin ingin menghapus \"${pending.name}\" dari daftar produk?",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -336,29 +375,18 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
                         shape = RoundedCornerShape(10.dp)
-                    ) { Text("Hapus") }
+                    ) {
+                        Text("Hapus")
+                    }
                 },
                 dismissButton = {
-                    OutlinedButton(
-                        onClick = { productToDelete = null },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) { Text("Batal") }
+                    TextButton(onClick = { productToDelete = null }) {
+                        Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                },
-                title = { Text("Hapus Produk", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
-                text = { Text("Apakah Anda yakin ingin menghapus ${pending.name} (Kategori: ${pending.category})?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                shape = RoundedCornerShape(20.dp),
-                containerColor = Color.White,
-                tonalElevation = 6.dp
+                shape = RoundedCornerShape(16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 4.dp
             )
         }
     }   

@@ -131,105 +131,108 @@ fun TransaksiFormScreen(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Kategori & Galeri Produk
+            // Kontainer besar putih untuk area kategori + produk
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(2.dp)
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(0.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LabeledText(text = "Kategori Produk")
-                    val categories = productViewModel.products.map { it.category }.filter { it.isNotBlank() }.distinct()
-                    if (categories.isNotEmpty()) {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Chip "Semua"
-                            item {
-                                FilterChip(
-                                    selected = selectedCategory == null,
-                                    onClick = { selectedCategory = null },
-                                    label = { Text("Semua") },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
-                                    )
+                LabeledText(text = "Kategori Produk")
+                val categories = productViewModel.products.map { it.category }.filter { it.isNotBlank() }.distinct()
+                if (categories.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Chip "Semua"
+                        item {
+                            FilterChip(
+                                selected = selectedCategory == null,
+                                onClick = { selectedCategory = null },
+                                label = { Text("Semua") },
+                                shape = RoundedCornerShape(50),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
                                 )
-                            }
-                            // Chip kategori lain
-                            items(categories) { cat ->
-                                FilterChip(
-                                    selected = selectedCategory == cat,
-                                    onClick = {
-                                        selectedCategory = if (selectedCategory == cat) null else cat
-                                    },
-                                    label = { Text(cat) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
-                                    )
-                                )
-                            }
+                            )
                         }
-                    }
-
-                    // Search bar untuk filter produk
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("Cari produk...") },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        shape = RoundedCornerShape(24.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    )
-
-                    val list = remember(selectedCategory, productViewModel.products, searchQuery) {
-                        val base = if (selectedCategory.isNullOrBlank()) productViewModel.products else productViewModel.products.filter { it.category.equals(selectedCategory, true) }
-                        if (searchQuery.isBlank()) base else base.filter { it.name.contains(searchQuery, ignoreCase = true) }
-                    }
-
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(120.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(list) { p ->
-                            ProductGridItem(
-                                name = p.name,
-                                price = p.price,
-                                stock = p.stock,
-                                imageUri = p.imageUri,
-                                onAdd = {
-                                    viewModel.addOrIncreaseItem(p.name, p.price, p.stock)
-                                    notifier?.show("Produk ditambahkan ke keranjang", NotificationType.Success, 1500)
-                                }
+                        // Chip kategori lain
+                        items(categories) { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = {
+                                    selectedCategory = if (selectedCategory == cat) null else cat
+                                },
+                                label = { Text(cat) },
+                                shape = RoundedCornerShape(50),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                )
                             )
                         }
                     }
                 }
+
+                // Search bar untuk filter produk
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Cari produk...") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+
+                val list = remember(selectedCategory, productViewModel.products, searchQuery) {
+                    val base = if (selectedCategory.isNullOrBlank()) productViewModel.products else productViewModel.products.filter { it.category.equals(selectedCategory, true) }
+                    if (searchQuery.isBlank()) base else base.filter { it.name.contains(searchQuery, ignoreCase = true) }
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(120.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(list) { p ->
+                        ProductGridItem(
+                            name = p.name,
+                            price = p.price,
+                            stock = p.stock,
+                            imageUri = p.imageUri,
+                            onAdd = {
+                                viewModel.addOrIncreaseItem(p.name, p.price, p.stock)
+                                notifier?.show("Produk ditambahkan ke keranjang", NotificationType.Success, 1500)
+                            }
+                        )
+                    }
+                }
             }
+        }
 
             if (showCustomerDialog) {
                 AlertDialog(
@@ -254,21 +257,40 @@ fun TransaksiFormScreen(
                                     onSaved(customerId)
                                 }
                             }
-                        ) { Text("Simpan") }
+                        ) {
+                            Text(
+                                "Simpan",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showCustomerDialog = false }) { Text("Batal") }
+                        TextButton(onClick = { showCustomerDialog = false }) {
+                            Text("Batal", color = MaterialTheme.colorScheme.error)
+                        }
                     },
-                    title = { Text("Nama Pelanggan") },
-                    text = {
-                        OutlinedTextField(
-                            value = customerNameInput,
-                            onValueChange = { customerNameInput = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            placeholder = { Text("Masukkan nama pelanggan") }
+                    title = {
+                        Text(
+                            "Nama Pelanggan",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
                         )
-                    }
+                    },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = customerNameInput,
+                                onValueChange = { customerNameInput = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                placeholder = { Text("Masukkan nama pelanggan") }
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    containerColor = Color.White,
+                    tonalElevation = 8.dp
                 )
             }
 
@@ -283,7 +305,18 @@ fun TransaksiFormScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Keranjang", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "Keranjang",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (viewModel.currentItems.isNotEmpty()) {
+                            Text(
+                                "${viewModel.currentItems.size} item",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
                         if (viewModel.currentItems.isEmpty()) {
                             Text("Keranjang masih kosong.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         } else {
@@ -293,43 +326,86 @@ fun TransaksiFormScreen(
                             ) {
                                 items(viewModel.currentItems.size) { index ->
                                     val it = viewModel.currentItems[index]
-                                    Divider()
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surface
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(it.productName, fontWeight = FontWeight.SemiBold)
-                                            Text(formatRupiah(it.unitPrice))
-                                            val p = productViewModel.products.firstOrNull { p -> p.name.equals(it.productName, true) }
-                                            val max = p?.stock ?: Int.MAX_VALUE
-                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                OutlinedIconButton(onClick = { viewModel.changeQuantity(it, -1, max) }, enabled = it.quantity > 1) {
-                                                    Icon(Icons.Filled.Remove, contentDescription = null)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(it.productName, fontWeight = FontWeight.SemiBold)
+                                                Text(
+                                                    formatRupiah(it.unitPrice),
+                                                    style = MaterialTheme.typography.labelMedium
+                                                )
+                                                val p = productViewModel.products.firstOrNull { p ->
+                                                    p.name.equals(it.productName, true)
                                                 }
-                                                Text(it.quantity.toString())
-                                                OutlinedIconButton(onClick = { viewModel.changeQuantity(it, +1, max) }, enabled = it.quantity < max) {
-                                                    Icon(Icons.Filled.Add, contentDescription = null)
+                                                val max = p?.stock ?: Int.MAX_VALUE
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(top = 4.dp)
+                                                ) {
+                                                    OutlinedIconButton(
+                                                        onClick = { viewModel.changeQuantity(it, -1, max) },
+                                                        enabled = it.quantity > 1,
+                                                        shape = RoundedCornerShape(50)
+                                                    ) {
+                                                        Icon(Icons.Filled.Remove, contentDescription = null)
+                                                    }
+                                                    Text(it.quantity.toString())
+                                                    OutlinedIconButton(
+                                                        onClick = { viewModel.changeQuantity(it, +1, max) },
+                                                        enabled = it.quantity < max,
+                                                        shape = RoundedCornerShape(50)
+                                                    ) {
+                                                        Icon(Icons.Filled.Add, contentDescription = null)
+                                                    }
                                                 }
                                             }
-                                        }
-                                        Column(horizontalAlignment = Alignment.End) {
-                                            Text("Subtotal", style = MaterialTheme.typography.labelSmall)
-                                            Text(formatRupiah(it.unitPrice * it.quantity), fontWeight = FontWeight.Bold)
-                                            TextButton(onClick = { itemToDelete = it }) { Text("Hapus", color = MaterialTheme.colorScheme.error) }
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text("Subtotal", style = MaterialTheme.typography.labelSmall)
+                                                Text(
+                                                    formatRupiah(it.unitPrice * it.quantity),
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                TextButton(onClick = { itemToDelete = it }) {
+                                                    Text("Hapus", color = MaterialTheme.colorScheme.error)
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
-                            Divider()
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Total", style = MaterialTheme.typography.titleMedium)
-                                Text(formatRupiah(viewModel.total), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Total", style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        formatRupiah(viewModel.total),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
                             }
                             Button(
                                 onClick = {
@@ -338,9 +414,11 @@ fun TransaksiFormScreen(
                                     showCustomerDialog = true
                                 },
                                 enabled = viewModel.currentItems.isNotEmpty(),
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) { Text("Lanjutkan") }
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                shape = RoundedCornerShape(50.dp)
+                            ) { Text("Lanjutkan", fontWeight = FontWeight.SemiBold) }
                         }
                     }
                 }
@@ -358,9 +436,10 @@ private fun ProductGridItem(
     onAdd: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp),
+        elevation = CardDefaults.cardElevation(3.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
         modifier = Modifier
             .fillMaxWidth()
     ) {
@@ -368,7 +447,8 @@ private fun ProductGridItem(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
@@ -387,8 +467,17 @@ private fun ProductGridItem(
                     )
                 }
             }
-            Text(name, maxLines = 1)
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                name,
+                maxLines = 1,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(formatRupiah(price), style = MaterialTheme.typography.labelMedium)
                     val stockText = if (stock > 0) "Stok: $stock" else "Habis"
@@ -398,7 +487,7 @@ private fun ProductGridItem(
                 Button(
                     onClick = onAdd,
                     enabled = stock > 0,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -406,7 +495,7 @@ private fun ProductGridItem(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     modifier = Modifier.heightIn(min = 32.dp)
                 ) {
-                    Text("Tambah")
+                    Text("Tambah", fontWeight = FontWeight.SemiBold)
                 }
             }
         }

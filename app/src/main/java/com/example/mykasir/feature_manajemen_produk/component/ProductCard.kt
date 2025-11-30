@@ -28,14 +28,14 @@ fun ProductCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -48,20 +48,20 @@ fun ProductCard(
                         painter = rememberAsyncImagePainter(product.imageUri),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(Color(0xFFECECEC))
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -71,12 +71,16 @@ fun ProductCard(
                         color = Color(0xFF333333)
                     )
 
-                   Text(
+                    Spacer(modifier = Modifier.height(1.dp))
+
+                    Text(
                         text = "Rp${product.price}",
                         color = Color.Gray,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+
+                    Spacer(modifier = Modifier.height(1.dp))
 
                     Text(
                         text = "Kategori: ${product.category}",
@@ -91,7 +95,7 @@ fun ProductCard(
                 }
             }
 
-            Row {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF6EC1E4))
                 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
@@ -86,29 +87,65 @@ fun TambahProdukScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Upload Foto
-            UploadFotoSection(
-                selectedImageUri = selectedImageUri,
-                onImageSelected = { uri -> selectedImageUri = uri }
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Upload Foto + judul (tepat di tengah atas kamera)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(bottom = 14.dp)
+                    ) {
+                        Text(
+                            text = "Foto Produk",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                        UploadFotoSection(
+                            selectedImageUri = selectedImageUri,
+                            onImageSelected = { uri -> selectedImageUri = uri },
+                            size = 96.dp
+                        )
+                    }
 
-            // Input Fields
-            InputField(value = nama, onValueChange = { nama = it }, label = "Nama Produk")
-            InputField(value = kategori, onValueChange = { kategori = it }, label = "Kategori")
-            InputField(value = harga, onValueChange = { harga = it }, label = "Harga")
-            InputField(value = stokAwal, onValueChange = { stokAwal = it }, label = "Stok Awal")
-            InputField(value = minStok, onValueChange = { minStok = it }, label = "Stok Minimum")
+                    // Judul kecil section
+                    Text(
+                        text = "Detail Produk",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Input Fields
+                    InputField(value = nama, onValueChange = { nama = it }, label = "Nama Produk")
+                    InputField(value = kategori, onValueChange = { kategori = it }, label = "Kategori")
+                    InputField(value = harga, onValueChange = { harga = it }, label = "Harga")
+                    InputField(value = stokAwal, onValueChange = { stokAwal = it }, label = "Stok Awal")
+                    InputField(value = minStok, onValueChange = { minStok = it }, label = "Stok Minimum")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Tombol Simpan
             Button(
@@ -150,8 +187,10 @@ fun TambahProdukScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
             ) {
                 Text(
                     "Simpan",
@@ -183,14 +222,18 @@ fun InputField(value: String, onValueChange: (String) -> Unit, label: String) {
 }
 
 @Composable
-fun UploadFotoSection(selectedImageUri: Uri?, onImageSelected: (Uri?) -> Unit) {
+fun UploadFotoSection(
+    selectedImageUri: Uri?,
+    onImageSelected: (Uri?) -> Unit,
+    size: Dp = 140.dp
+) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> onImageSelected(uri) }
 
     Box(
         modifier = Modifier
-            .size(140.dp)
+            .size(size)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
             .clickable { launcher.launch("image/*") },

@@ -2,6 +2,7 @@ package com.example.mykasir.feature_laporan
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,6 +35,7 @@ fun ChartPage(
     var selectedTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val dateState = rememberDatePickerState(initialSelectedDateMillis = selectedTime)
     val sdf = remember { SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()) }
+    val monthFormat = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
 
     Scaffold(
         topBar = {
@@ -59,46 +64,84 @@ fun ChartPage(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Segmented Harian/Bulanan
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFF1F1F1), RoundedCornerShape(24.dp))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                // Kartu filter mode & tanggal/bulan
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FA)),
+                    elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    TogglePill(text = "Harian", selected = mode == ReportModeSR.Daily) { mode = ReportModeSR.Daily }
-                    Spacer(Modifier.width(8.dp))
-                    TogglePill(text = "Bulanan", selected = mode == ReportModeSR.Monthly) { mode = ReportModeSR.Monthly }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFF1F1F1), RoundedCornerShape(24.dp))
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            TogglePill(text = "Harian", selected = mode == ReportModeSR.Daily) { mode = ReportModeSR.Daily }
+                            Spacer(Modifier.width(8.dp))
+                            TogglePill(text = "Bulanan", selected = mode == ReportModeSR.Monthly) { mode = ReportModeSR.Monthly }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            val displayDate = if (mode == ReportModeSR.Daily) {
+                                sdf.format(Date(selectedTime))
+                            } else {
+                                monthFormat.format(Date(selectedTime))
+                            }
+                            OutlinedTextField(
+                                value = displayDate,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { showDatePicker = true }) {
+                                        Icon(Icons.Filled.CalendarMonth, contentDescription = null)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showDatePicker = true }
+                            )
+                        }
+                    }
                 }
 
-                // Date input & picker
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Date", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    OutlinedTextField(
-                        value = sdf.format(Date(selectedTime)),
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Filled.CalendarMonth, contentDescription = null)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
                 if (showDatePicker) {
-                    DatePickerDialog(
-                        onDismissRequest = { showDatePicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                dateState.selectedDateMillis?.let { selectedTime = it }
+                    if (mode == ReportModeSR.Daily) {
+                        DatePickerDialog(
+                            onDismissRequest = { showDatePicker = false },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    dateState.selectedDateMillis?.let { picked ->
+                                        selectedTime = picked
+                                    }
+                                    showDatePicker = false
+                                }) { Text("OK") }
+                            },
+                            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+                        ) {
+                            DatePicker(state = dateState, showModeToggle = false)
+                        }
+                    } else {
+                        MonthYearPickerDialogChart(
+                            initialTime = selectedTime,
+                            onDismiss = { showDatePicker = false },
+                            onConfirm = { millis ->
+                                selectedTime = millis
                                 showDatePicker = false
-                            }) { Text("OK") }
-                        },
-                        dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
-                    ) {
-                        DatePicker(state = dateState, showModeToggle = false)
+                            }
+                        )
                     }
                 }
 
@@ -106,7 +149,7 @@ fun ChartPage(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp),
+                        .height(230.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1EE)),
                     shape = RoundedCornerShape(24.dp)
                 ) {
@@ -117,38 +160,148 @@ fun ChartPage(
                             ReportModeSR.Monthly -> dailySeriesInMonth(viewModel, selectedTime)
                         }
                     }
-                    Canvas(
+
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(170.dp)
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                            .fillMaxSize()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        val w = size.width
-                        val h = size.height
-                        val path = Path()
-                        points.forEachIndexed { i, v ->
-                            val x = if (points.size == 1) w/2f else (i.toFloat() / (points.size - 1)) * (w - 16f) + 8f
-                            val y = h - (v * (h - 16f) + 8f)
-                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        // Judul & periode
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = if (mode == ReportModeSR.Daily) "Grafik Penjualan Harian" else "Grafik Penjualan Bulanan",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (mode == ReportModeSR.Daily) sdf.format(Date(selectedTime)) else monthFormat.format(Date(selectedTime)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        drawPath(path = path, color = color, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f))
-                        points.forEachIndexed { i, v ->
-                            val x = if (points.size == 1) w/2f else (i.toFloat() / (points.size - 1)) * (w - 16f) + 8f
-                            val y = h - (v * (h - 16f) + 8f)
-                            drawCircle(color = color, radius = 4f, center = Offset(x, y))
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Area grafik dengan gaya halus seperti di LaporanScreen
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        ) {
+                            val w = size.width
+                            val h = size.height
+
+                            // Grid horizontal halus
+                            val gridColor = Color.Black.copy(alpha = 0.04f)
+                            val gridCount = 4
+                            for (i in 1..gridCount) {
+                                val y = h * i / (gridCount + 1)
+                                drawLine(
+                                    color = gridColor,
+                                    start = Offset(0f, y),
+                                    end = Offset(w, y),
+                                    strokeWidth = 1f
+                                )
+                            }
+
+                            if (points.isNotEmpty()) {
+                                // Fungsi bantu untuk posisi titik, mirip LaporanScreen
+                                fun getPoint(index: Int): Offset {
+                                    val iSafe = index.coerceIn(0, points.lastIndex)
+                                    val x = if (points.size == 1) {
+                                        w / 2f
+                                    } else {
+                                        (iSafe.toFloat() / (points.size - 1)) * (w - 32f) + 16f
+                                    }
+                                    val y = h - (points[iSafe] * (h - 24f) + 12f)
+                                    return Offset(x, y)
+                                }
+
+                                // Path halus (quadratic) seperti di mini-chart
+                                val smoothPath = Path().apply {
+                                    var previousPoint = getPoint(0)
+                                    moveTo(previousPoint.x, previousPoint.y)
+
+                                    for (i in 1..points.lastIndex) {
+                                        val currentPoint = getPoint(i)
+                                        val midPoint = Offset(
+                                            (previousPoint.x + currentPoint.x) / 2f,
+                                            (previousPoint.y + currentPoint.y) / 2f
+                                        )
+                                        quadraticBezierTo(
+                                            previousPoint.x,
+                                            previousPoint.y,
+                                            midPoint.x,
+                                            midPoint.y
+                                        )
+                                        previousPoint = currentPoint
+                                    }
+
+                                    // Tarik sampai titik terakhir
+                                    lineTo(previousPoint.x, previousPoint.y)
+                                }
+
+                                // Area halus di bawah garis
+                                val filledPath = Path().apply {
+                                    val first = getPoint(0)
+                                    val last = getPoint(points.lastIndex)
+                                    moveTo(first.x, h)
+                                    addPath(smoothPath)
+                                    lineTo(last.x, h)
+                                    close()
+                                }
+
+                                drawPath(
+                                    path = filledPath,
+                                    color = color.copy(alpha = 0.12f)
+                                )
+
+                                // Garis utama
+                                drawPath(
+                                    path = smoothPath,
+                                    color = color,
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f)
+                                )
+
+                                // Titik dua lapis (putih + warna utama) seperti mini-chart
+                                points.forEachIndexed { i, _ ->
+                                    val center = getPoint(i)
+                                    drawCircle(
+                                        color = Color.White,
+                                        radius = 4f,
+                                        center = center
+                                    )
+                                    drawCircle(
+                                        color = color,
+                                        radius = 2.6f,
+                                        center = center
+                                    )
+                                }
+                            }
                         }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val labels = when (mode) {
-                            ReportModeSR.Daily -> listOf("00","04","08","12","16","20","23")
-                            ReportModeSR.Monthly -> listOf("1","6","11","16","21","26","31")
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // Label sumbu X (samakan dengan grafik di LaporanScreen)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val labels = when (mode) {
+                                ReportModeSR.Daily -> listOf("00","04","08","12","16","20","23")
+                                ReportModeSR.Monthly -> listOf("1","6","11","16","21","26","31")
+                            }
+                            labels.forEach { t ->
+                                Text(
+                                    text = t,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                        labels.forEach { t -> Text(t, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
             }
@@ -193,4 +346,130 @@ private fun dailySeriesInMonth(vm: TransaksiViewModel, selected: Long): List<Flo
     val max = buckets.maxOrNull() ?: 0L
     val range = (max - min).coerceAtLeast(1L).toFloat()
     return List(days) { ((buckets[it] - min).toFloat() / range).coerceIn(0f, 1f) }
+}
+
+@Composable
+private fun MonthYearPickerDialogChart(
+    initialTime: Long,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    val cal = remember(initialTime) {
+        Calendar.getInstance().apply { timeInMillis = initialTime }
+    }
+    var selectedYear by remember { mutableStateOf(cal.get(Calendar.YEAR)) }
+    var selectedMonth by remember { mutableStateOf(cal.get(Calendar.MONTH)) }
+
+    val years = remember { (selectedYear - 5..selectedYear + 5).toList() }
+    val monthNames = remember {
+        (0..11).map { index ->
+            java.text.DateFormatSymbols().months[index].take(3)
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .widthIn(min = 260.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Pilih bulan dan tahun",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Pilih bulan
+                Text(
+                    text = "Bulan",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(12) { index ->
+                        val isSelected = index == selectedMonth
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFF1F1F1),
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .clickable { selectedMonth = index }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = monthNames[index],
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Pilih tahun
+                Text(
+                    text = "Tahun",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(years) { year ->
+                        val isSelected = year == selectedYear
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFF1F1F1),
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .clickable { selectedYear = year }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = year.toString(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Batal")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = {
+                        val calendar = Calendar.getInstance().apply {
+                            set(Calendar.YEAR, selectedYear)
+                            set(Calendar.MONTH, selectedMonth)
+                            set(Calendar.DAY_OF_MONTH, 1)
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        onConfirm(calendar.timeInMillis)
+                    }) {
+                        Text("OK")
+                    }
+                }
+            }
+        }
+    }
 }

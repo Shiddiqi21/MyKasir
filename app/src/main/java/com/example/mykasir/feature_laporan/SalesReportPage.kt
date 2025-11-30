@@ -1,9 +1,10 @@
 package com.example.mykasir.feature_laporan
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -29,6 +30,9 @@ import java.io.OutputStream
 import android.graphics.pdf.PdfDocument
 import android.graphics.Paint
 import com.example.mykasir.core_ui.formatRupiah
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +44,8 @@ fun SalesReportPage(
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val sdf = remember { SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()) }
+    val monthFormat = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
+    val monthKeyFormat = remember { SimpleDateFormat("yyyy-MM", Locale.getDefault()) }
     val dateState = rememberDatePickerState(initialSelectedDateMillis = selectedTime)
     val context = LocalContext.current
 
@@ -98,59 +104,107 @@ fun SalesReportPage(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Segmented toggle Harian / Bulanan
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFF1F1F1), RoundedCornerShape(24.dp))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TogglePill(text = "Harian", selected = mode == ReportModeSR.Daily) { mode = ReportModeSR.Daily }
-                    Spacer(Modifier.width(8.dp))
-                    TogglePill(text = "Bulanan", selected = mode == ReportModeSR.Monthly) { mode = ReportModeSR.Monthly }
-                }
-
-                // Date input dengan icon kalender
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Date", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    OutlinedTextField(
-                        value = sdf.format(Date(selectedTime)),
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Filled.CalendarMonth, contentDescription = null)
+                    // Segmented toggle Harian / Bulanan + tanggal dalam satu kartu filter
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FA)),
+                        elevation = CardDefaults.cardElevation(0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFF1F1F1), RoundedCornerShape(24.dp))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                TogglePill(text = "Harian", selected = mode == ReportModeSR.Daily) { mode = ReportModeSR.Daily }
+                                Spacer(Modifier.width(8.dp))
+                                TogglePill(text = "Bulanan", selected = mode == ReportModeSR.Monthly) { mode = ReportModeSR.Monthly }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                val displayDate = if (mode == ReportModeSR.Daily) {
+                                    sdf.format(Date(selectedTime))
+                                } else {
+                                    monthFormat.format(Date(selectedTime))
+                                }
+                                OutlinedTextField(
+                                    value = displayDate,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = {
+                                        IconButton(onClick = { showDatePicker = true }) {
+                                            Icon(Icons.Filled.CalendarMonth, contentDescription = null)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showDatePicker = true }
+                                )
+                            }
+                        }
+                    }
 
                 if (showDatePicker) {
-                    DatePickerDialog(
-                        onDismissRequest = { showDatePicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                val picked = dateState.selectedDateMillis
-                                if (picked != null) selectedTime = picked
+                    if (mode == ReportModeSR.Daily) {
+                        DatePickerDialog(
+                            onDismissRequest = { showDatePicker = false },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val picked = dateState.selectedDateMillis
+                                    if (picked != null) {
+                                        selectedTime = picked
+                                    }
+                                    showDatePicker = false
+                                }) { Text("OK") }
+                            },
+                            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+                        ) {
+                            DatePicker(
+                                state = dateState,
+                                showModeToggle = false
+                            )
+                        }
+                    } else {
+                        MonthYearPickerDialog(
+                            initialTime = selectedTime,
+                            onDismiss = { showDatePicker = false },
+                            onConfirm = { millis ->
+                                selectedTime = millis
                                 showDatePicker = false
-                            }) { Text("OK") }
-                        },
-                        dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
-                    ) {
-                        DatePicker(
-                            state = dateState,
-                            showModeToggle = false
+                            }
                         )
                     }
                 }
 
-                // Tabel contoh
+                // Tabel laporan dengan striping baris halus
                 Card(shape = RoundedCornerShape(16.dp)) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         TableHeader()
-                        LazyColumn { items(rows) { r -> TableRow(r) } }
+                        LazyColumn {
+                            itemsIndexed(rows) { index, r ->
+                                val bg = if (index % 2 == 0) Color(0xFFFFFFFF) else Color(0xFFF7F7FB)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(bg)
+                                ) {
+                                    TableRow(r)
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -158,6 +212,16 @@ fun SalesReportPage(
                 val numericRows = remember(rows) { rows.filter { it.lastOrNull()?.toIntOrNull() != null } }
                 val itemCount = numericRows.size
                 val grandTotal = numericRows.sumOf { it.last().toInt() }
+
+                if (mode == ReportModeSR.Monthly) {
+                    Text(
+                        text = monthFormat.format(Date(selectedTime)),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,25 +235,60 @@ fun SalesReportPage(
                 }
 
                 // Tombol aksi export
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = {
-                            pendingPdf = rows
-                            pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp)
-                    ) { Icon(Icons.Filled.Description, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("PDF") }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FA)),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                pendingPdf = rows
+                                pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Description,
+                                contentDescription = null
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("PDF", style = MaterialTheme.typography.labelMedium)
+                        }
 
-                    OutlinedButton(
-                        onClick = {
-                            val csv = buildCsv(rows)
-                            pendingCsv = csv
-                            csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp)
-                    ) { Icon(Icons.Filled.TableChart, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Excel") }
+                        Button(
+                            onClick = {
+                                val csv = buildCsv(rows)
+                                pendingCsv = csv
+                                csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF388E3C),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.TableChart,
+                                contentDescription = null
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Excel", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
                 }
             }
         }
@@ -215,10 +314,22 @@ private fun TableHeader() {
             .fillMaxWidth()
             .background(Color(0xFFE9EEF3))
             .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        listOf("Tanggal", "Produk", "Qty", "Harga", "Subtotal").forEach { h ->
-            Text(h, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E2A3A))
+        val headers = listOf("Tanggal", "Produk", "Qty", "Harga", "Subtotal")
+        val weights = listOf(1.2f, 1.55f, 0.75f, 0.9f, 1.1f)
+
+        headers.forEachIndexed { index, h ->
+            val align = if (index >= 2) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start
+            Text(
+                text = h,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1E2A3A),
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = align,
+                modifier = Modifier
+                    .weight(weights[index])
+            )
         }
     }
 }
@@ -229,14 +340,28 @@ private fun TableRow(cols: List<String>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) { cols.forEach { c -> Text(c, color = MaterialTheme.colorScheme.onSurface) } }
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val weights = listOf(1.2f, 1.55f, 0.75f, 0.9f, 1.1f)
+
+        cols.forEachIndexed { index, c ->
+            val align = if (index >= 2) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start
+            Text(
+                text = c,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = align,
+                modifier = Modifier
+                    .weight(weights.getOrElse(index) { 1f })
+            )
+        }
+    }
 }
 
 enum class ReportModeSR { Daily, Monthly }
 
 private fun buildRows(vm: TransaksiViewModel, selectedTime: Long, mode: ReportModeSR): List<List<String>> {
-    val sdfDate = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+    val sdfDate = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
     val sdfTime = SimpleDateFormat("HH:mm", Locale.getDefault())
     val dayStart = java.util.Calendar.getInstance().apply {
         timeInMillis = selectedTime
@@ -320,4 +445,130 @@ private fun writeSimplePdf(os: OutputStream, title: String, subtitle: String, ta
     doc.finishPage(page)
     doc.writeTo(os)
     doc.close()
+}
+
+@Composable
+private fun MonthYearPickerDialog(
+    initialTime: Long,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    val cal = remember(initialTime) {
+        java.util.Calendar.getInstance().apply { timeInMillis = initialTime }
+    }
+    var selectedYear by remember { mutableStateOf(cal.get(java.util.Calendar.YEAR)) }
+    var selectedMonth by remember { mutableStateOf(cal.get(java.util.Calendar.MONTH)) }
+
+    val years = remember { (selectedYear - 5..selectedYear + 5).toList() }
+    val monthNames = remember {
+        (0..11).map { index ->
+            java.text.DateFormatSymbols().months[index].take(3)
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .widthIn(min = 260.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Pilih bulan dan tahun",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Pilih bulan
+                Text(
+                    text = "Bulan",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(12) { index ->
+                        val isSelected = index == selectedMonth
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFF1F1F1),
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .clickable { selectedMonth = index }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = monthNames[index],
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Pilih tahun
+                Text(
+                    text = "Tahun",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(years) { year ->
+                        val isSelected = year == selectedYear
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFF1F1F1),
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .clickable { selectedYear = year }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = year.toString(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Batal")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = {
+                        val calendar = java.util.Calendar.getInstance().apply {
+                            set(java.util.Calendar.YEAR, selectedYear)
+                            set(java.util.Calendar.MONTH, selectedMonth)
+                            set(java.util.Calendar.DAY_OF_MONTH, 1)
+                            set(java.util.Calendar.HOUR_OF_DAY, 0)
+                            set(java.util.Calendar.MINUTE, 0)
+                            set(java.util.Calendar.SECOND, 0)
+                            set(java.util.Calendar.MILLISECOND, 0)
+                        }
+                        onConfirm(calendar.timeInMillis)
+                    }) {
+                        Text("OK")
+                    }
+                }
+            }
+        }
+    }
 }

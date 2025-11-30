@@ -1,10 +1,16 @@
 package com.example.mykasir.feature_manajemen_produk.component
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import com.example.mykasir.feature_manajemen_produk.model.Product
 
 
@@ -22,15 +28,40 @@ fun UpdateStockDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
 
-        // Judul Pop-up
         title = {
-            Text(text = "Update Stok ${product.name}")
+            Text(
+                text = "Update stok produk",
+                style = MaterialTheme.typography.titleMedium
+            )
         },
 
-        // Konten (TextField)
         text = {
             Column {
-                Text(text = "Masukkan jumlah stok yang baru.")
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Stok saat ini: ${product.stock}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Min: ${product.minStock}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = androidx.compose.ui.Modifier.height(10.dp))
+
                 OutlinedTextField(
                     value = newStockText,
                     onValueChange = {
@@ -38,14 +69,19 @@ fun UpdateStockDialog(
                         // Cek apakah input valid (angka)
                         isError = it.toIntOrNull() == null
                     },
-                    label = { Text("Jumlah Stok Baru") },
+                    label = { Text("Jumlah stok baru") },
                     singleLine = true,
                     // Tampilkan keyboard angka
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = isError,
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                     supportingText = {
                         if (isError) {
-                            Text("Harap masukkan angka")
+                            Text(
+                                text = "Harap masukkan angka yang valid",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 )
@@ -58,10 +94,10 @@ fun UpdateStockDialog(
                 onClick = {
                     val newStockValue = newStockText.toIntOrNull()
                     if (newStockValue != null) {
-                        onConfirm(newStockValue) // Kirim nilai baru
-                        onDismiss() // Tutup dialog
+                        onConfirm(newStockValue)
+                        onDismiss()
                     } else {
-                        isError = true // Tampilkan error jika masih salah
+                        isError = true
                     }
                 }
             ) {
@@ -69,7 +105,6 @@ fun UpdateStockDialog(
             }
         },
 
-        // Tombol Batal
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Batal")

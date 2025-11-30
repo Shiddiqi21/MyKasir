@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.IconButtonDefaults
 import com.example.mykasir.feature_transaksi.model.Customer
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
@@ -49,7 +50,7 @@ fun TransaksiListScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -62,12 +63,23 @@ fun TransaksiListScreen(
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(70.dp)
                 )
-                Text(
-                    text = "Transaksi",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Transaksi",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Kelola dan pantau transaksi tokomu",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
                 IconButton(onClick = { /* Arahkan ke profil */ }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_person),
@@ -86,6 +98,12 @@ fun TransaksiListScreen(
                     .fillMaxWidth()
                     .height(46.dp)
             ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = "Tambah Transaksi",
                     color = MaterialTheme.colorScheme.primary,
@@ -111,28 +129,63 @@ fun TransaksiListScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Daftar pelanggan yang pernah bertransaksi",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
                 Spacer(modifier = Modifier.height(12.dp))
                 val transactedCustomers = viewModel.customers.filter { c ->
                     viewModel.transactionsFor(c.id).isNotEmpty()
                 }
 
                 if (transactedCustomers.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Text("Belum ada transaksi yang tersimpan", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.mykasir_logo),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Belum ada transaksi yang tersimpan",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
                     }
-                }
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(transactedCustomers) { customer ->
-                        val txs = viewModel.transactionsFor(customer.id)
-                        CustomerRow(
-                            customer = customer,
-                            onDetail = { onDetail(customer) },
-                            onDelete = { customerToDelete = customer },
-                            txIds = txs.map { it.id }
-                        )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(transactedCustomers) { customer ->
+                            val txs = viewModel.transactionsFor(customer.id)
+                            CustomerRow(
+                                customer = customer,
+                                onDetail = { onDetail(customer) },
+                                onDelete = { customerToDelete = customer },
+                                txIds = txs.map { it.id }
+                            )
+                        }
                     }
                 }
             }
@@ -155,22 +208,54 @@ fun TransaksiListScreen(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
                     ),
-                    shape = RoundedCornerShape(10.dp)
-                ) { Text("Hapus") }
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Hapus", fontWeight = FontWeight.SemiBold)
+                }
             },
             dismissButton = {
                 OutlinedButton(
                     onClick = { customerToDelete = null },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(10.dp)
-                ) { Text("Batal") }
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Batal", fontWeight = FontWeight.Medium)
+                }
             },
-            icon = { Icon(imageVector = Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Hapus Riwayat", fontWeight = FontWeight.Bold) },
-            text = { Text("Apakah Anda yakin ingin menghapus riwayat transaksi ${pending.name}?") },
-            shape = RoundedCornerShape(20.dp),
-            containerColor = Color.White,
-            tonalElevation = 6.dp
+            icon = {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+                ) {
+                    Box(
+                        modifier = Modifier.size(46.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            title = {
+                Text(
+                    "Hapus Riwayat",
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            },
+            text = {
+                Text(
+                    "Apakah Anda yakin ingin menghapus riwayat transaksi ${pending.name}?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = Color(0xFFF7FBFF),
+            tonalElevation = 0.dp
         )
     }
 }
@@ -184,19 +269,24 @@ private fun CustomerRow(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F7)),
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(14.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(customer.name, color = MaterialTheme.colorScheme.onSurface)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    customer.name,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
                 val label = if (txIds.isEmpty()) {
                     "Nomor Transaksi: -"
                 } else {
@@ -206,20 +296,39 @@ private fun CustomerRow(
                 }
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (txIds.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                    ) {
+                        Text(
+                            text = "${txIds.size} transaksi",
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Spacer(Modifier.width(4.dp))
                 FilledTonalIconButton(
                     onClick = onDetail,
                     shape = RoundedCornerShape(12.dp),
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                    ),
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(imageVector = Icons.Filled.Visibility, contentDescription = "Detail")
+                    Icon(
+                        imageVector = Icons.Filled.Visibility,
+                        contentDescription = "Detail",
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
                 FilledTonalIconButton(
                     onClick = onDelete,
@@ -227,9 +336,14 @@ private fun CustomerRow(
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                    ),
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Hapus")
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Hapus",
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }

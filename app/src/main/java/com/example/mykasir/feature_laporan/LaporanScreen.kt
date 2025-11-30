@@ -24,6 +24,8 @@ import com.example.mykasir.R
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
+import java.text.NumberFormat
+import java.util.Locale
  
 @Composable
 fun LaporanScreen(
@@ -31,7 +33,27 @@ fun LaporanScreen(
     onOpenLaporan: () -> Unit,
     onOpenGrafik: () -> Unit
 ) {
-    
+    // Hitung total pendapatan hari ini
+    val totalHariIni = remember(viewModel.transactions) {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val start = cal.timeInMillis
+        val end = start + TimeUnit.DAYS.toMillis(1)
+        viewModel.transactions
+            .filter { it.timestamp in start until end }
+                .sumOf { it.total }
+    }
+
+            // Format angka ke dalam format Rupiah sederhana
+            val formattedTotalHariIni = remember(totalHariIni) {
+            val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
+            "Rp " + formatter.format(totalHariIni)
+            }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,18 +78,63 @@ fun LaporanScreen(
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(70.dp)
                 )
-                Text(
-                    text = "Grafik dan Laporan",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Grafik & Laporan",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Pantau performa penjualan tokomu",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
+
                 IconButton(onClick = { /* profil */ }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_person),
                         contentDescription = "Profil",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // Ringkasan total pendapatan hari ini dalam kontainer
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f)
+                ),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Total pendapatan hari ini",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                        )
+                    }
+                    Text(
+                        text = formattedTotalHariIni,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -82,23 +149,34 @@ fun LaporanScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Text(
-                    text = "Penjualan Hari Ini",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
+                // Header kecil untuk section penjualan hari ini
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Penjualan Hari Ini",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                       
+                    }
+                }
 
                 // Kartu grafik
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp),
+                        .height(200.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1EE)),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(0.dp)
                 ) {
                     val graphColor = MaterialTheme.colorScheme.primary
                     // Hitung total penjualan HARI INI per-jam (0..23)
@@ -121,27 +199,144 @@ fun LaporanScreen(
                         val range = (max - min).coerceAtLeast(1L).toFloat()
                         List(24) { i -> ((buckets[i] - min).toFloat() / range).coerceIn(0f, 1f) }
                     }
+                    // Header kecil di dalam kartu grafik
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Grafik Penjualan Hari Ini",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                            )
+                            Text(
+                                text = "Per jam, 00 - 23",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            color = graphColor,
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Penjualan",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(140.dp)
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                            .height(120.dp)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                     ) {
                         val w = size.width
                         val h = size.height
                         val points = hourlyFractions
-                        val path = Path()
-                        points.forEachIndexed { i, v ->
-                            val x = (i.toFloat() / (points.size - 1)) * (w - 16f) + 8f
-                            val y = h - (v * (h - 16f) + 8f)
-                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+
+                        // Garis grid horizontal tipis untuk tampilan modern
+                        val gridColor = Color.Black.copy(alpha = 0.04f)
+                        val gridCount = 4
+                        for (i in 1..gridCount) {
+                            val y = h * i / (gridCount + 1)
+                            drawLine(
+                                color = gridColor,
+                                start = Offset(0f, y),
+                                end = Offset(w, y),
+                                strokeWidth = 1f
+                            )
                         }
-                        drawPath(path = path, color = graphColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f))
-                        // titik
-                        points.forEachIndexed { i, v ->
-                            val x = (i.toFloat() / (points.size - 1)) * (w - 16f) + 8f
-                            val y = h - (v * (h - 16f) + 8f)
-                            drawCircle(color = graphColor, radius = 4f, center = Offset(x, y))
+
+                        if (points.isNotEmpty()) {
+                            // Bangun path halus (cubic Bezier) agar garis tidak kaku
+                            fun getPoint(index: Int): Offset {
+                                val iSafe = index.coerceIn(0, points.lastIndex)
+                                val x = (iSafe.toFloat() / (points.size - 1)) * (w - 32f) + 16f
+                                val y = h - (points[iSafe] * (h - 24f) + 12f)
+                                return Offset(x, y)
+                            }
+
+                            val smoothPath = Path().apply {
+                                var previousPoint = getPoint(0)
+                                moveTo(previousPoint.x, previousPoint.y)
+
+                                for (i in 1..points.lastIndex) {
+                                    val currentPoint = getPoint(i)
+                                    val midPoint = Offset(
+                                        (previousPoint.x + currentPoint.x) / 2f,
+                                        (previousPoint.y + currentPoint.y) / 2f
+                                    )
+                                    quadraticBezierTo(
+                                        previousPoint.x,
+                                        previousPoint.y,
+                                        midPoint.x,
+                                        midPoint.y
+                                    )
+                                    previousPoint = currentPoint
+                                }
+
+                                // Tarik sampai titik terakhir
+                                lineTo(previousPoint.x, previousPoint.y)
+                            }
+
+                            // Area halus di bawah garis
+                            val filledPath = Path().apply {
+                                val first = getPoint(0)
+                                val last = getPoint(points.lastIndex)
+                                moveTo(first.x, h)
+                                addPath(smoothPath)
+                                lineTo(last.x, h)
+                                close()
+                            }
+
+                            drawPath(
+                                path = filledPath,
+                                color = graphColor.copy(alpha = 0.12f)
+                            )
+
+                            // Garis utama yang lebih fleksibel (smooth)
+                            drawPath(
+                                path = smoothPath,
+                                color = graphColor,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f)
+                            )
+
+                            // Titik di setiap jam (sedikit lebih kecil agar lembut)
+                            points.forEachIndexed { i, _ ->
+                                val center = getPoint(i)
+                                drawCircle(
+                                    color = Color.White,
+                                    radius = 4f,
+                                    center = center
+                                )
+                                drawCircle(
+                                    color = graphColor,
+                                    radius = 2.6f,
+                                    center = center
+                                )
+                            }
                         }
                     }
                     // Label jam (contoh titik: 0, 4, 8, 12, 16, 20, 23)
@@ -161,7 +356,7 @@ fun LaporanScreen(
                 ActionCard(
                     icon = Icons.Filled.Description,
                     title = "Laporan Penjualan",
-                    subtitle = "Kelola dan ekspor laporan Penjualan",
+                    subtitle = "Ringkasan dan detail transaksi",
                     onClick = { onOpenLaporan() }
                 )
 
@@ -169,7 +364,7 @@ fun LaporanScreen(
                 ActionCard(
                     icon = Icons.Filled.ShowChart,
                     title = "Grafik Penjualan",
-                    subtitle = "Visualisasi Data dalam Grafik",
+                    subtitle = "Tren penjualan dalam grafik",
                     onClick = { onOpenGrafik() }
                 )
             }
@@ -186,33 +381,72 @@ private fun ActionCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFEFEF)),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        modifier = Modifier
+            .fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F7)),
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 // Badge ikon kiri
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                            RoundedCornerShape(14.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                        shape = RoundedCornerShape(50)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
