@@ -30,7 +30,7 @@ fun RootNavGraph() {
         // Landing Screen
         composable(route = "landing") {
             LandingScreen(
-                onStart = {
+                onFinished = {
                     navController.navigate(Graph.AUTH) {
                         popUpTo("landing") { inclusive = true }
                     }
