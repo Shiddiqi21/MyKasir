@@ -44,13 +44,11 @@ fun TransaksiListScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primary)
     ) {
-        // Header biru dengan logo dan judul (selaraskan dengan ManajemenProduk)
+        // HEADER BIRU (konsisten dengan beranda, tanpa ikon profil) + tombol tambah
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,25 +68,20 @@ fun TransaksiListScreen(
                     Text(
                         text = "Transaksi",
                         color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Kelola dan pantau transaksi tokomu",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        text = "Kelola transaksi dan pelanggan",
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
-                IconButton(onClick = { /* Arahkan ke profil */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_person),
-                        contentDescription = "Profil",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(28.dp)) // ruang kosong pengganti ikon profil
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Button(
                 onClick = onTambahTransaksi,

@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 import java.util.Calendar
 import java.text.NumberFormat
 import java.util.Locale
- 
+
 @Composable
 fun LaporanScreen(
     viewModel: TransaksiViewModel,
@@ -45,27 +45,26 @@ fun LaporanScreen(
         val end = start + TimeUnit.DAYS.toMillis(1)
         viewModel.transactions
             .filter { it.timestamp in start until end }
-                .sumOf { it.total }
+            .sumOf { it.total }
     }
 
-            // Format angka ke dalam format Rupiah sederhana
-            val formattedTotalHariIni = remember(totalHariIni) {
-            val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
-            "Rp " + formatter.format(totalHariIni)
-            }
+    // Format angka ke dalam format Rupiah sederhana
+    val formattedTotalHariIni = remember(totalHariIni) {
+        val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
+        "Rp " + formatter.format(totalHariIni)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primary)
     ) {
-        // Header biru konsisten
+        // Header biru (konsisten dengan beranda, tanpa ikon profil) + ringkasan singkat
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -78,33 +77,24 @@ fun LaporanScreen(
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(70.dp)
                 )
-
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Grafik & Laporan",
+                        text = "Laporan",
                         color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Pantau performa penjualan tokomu",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
-
-                IconButton(onClick = { /* profil */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_person),
-                        contentDescription = "Profil",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(28.dp)) // ruang kosong pengganti ikon profil
             }
 
             // Ringkasan total pendapatan hari ini dalam kontainer

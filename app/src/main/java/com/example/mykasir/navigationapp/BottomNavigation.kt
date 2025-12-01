@@ -1,15 +1,23 @@
-package com.example.mykasir.navigationapp // Package disesuaikan dengan kode Anda
+package com.example.mykasir.navigationapp
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -25,15 +33,15 @@ fun BottomNavBar(
     navController: NavController,
     items: List<NavItem>
 ) {
-    NavigationBar(
-        // Mengambil warna biru utama dari Tema Anda
-        containerColor = MaterialTheme.colorScheme.primary,
-    ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
+    // Bar putih seperti referensi
+    NavigationBar(containerColor = Color.White) {
         items.forEach { item ->
-            val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+            val isSelected = currentDestination?.route == item.route
+
+            val isTransaksi = item.route == "wallet"
 
             NavigationBarItem(
                 selected = isSelected,
@@ -47,27 +55,44 @@ fun BottomNavBar(
                     }
                 },
                 icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        // Ikon sedikit lebih kecil agar tampak modern dan minimalis
-                        modifier = Modifier.size(26.dp)
-                    )
+                    if (isTransaksi) {
+                        // Tombol tengah biru, sedikit lebih besar dari ikon biasa
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(
+                                    color = Color(0xFF2196F3),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.label,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 },
                 label = {
                     Text(
                         text = item.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1
+                        style = MaterialTheme.typography.labelSmall
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    // Ikon aktif: Mengambil warna teks utama (hitam) dari Tema
-                    selectedIconColor = MaterialTheme.colorScheme.onSurface,
-                    // Ikon non-aktif: Mengambil warna teks di atas primary (putih) dari Tema
-                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                    // Indikator tetap transparan
-                    indicatorColor = Color.Transparent // <-- 2. BARIS INI MEMBUTUHKAN IMPORT
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = Color.Gray,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedTextColor = Color.Gray,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 )
             )
         }

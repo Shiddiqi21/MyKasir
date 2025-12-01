@@ -44,59 +44,42 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primary)
     ) {
-        // --- 1. HEADER KUSTOM ---
+        // HEADER BIRU (konsisten dengan beranda, tanpa ikon profil)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // --- Baris Atas: Logo, Judul, Profil ---
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),                
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // --- 1. UBAH DI SINI: Gunakan painterResource ---
                 Icon(
-                    // Pastikan Anda punya file 'mykasir_logo' di drawable
                     painter = painterResource(id = R.drawable.mykasir_logo),
-                    contentDescription = "Logo MyKasir",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(70.dp)
                 )
-
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Manajemen Produk",
-                        fontSize = 20.sp,
+                        text = "Stok Produk",
                         color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Kelola seluruh produk toko",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                        text = "Pantau persediaan barang di tokomu",
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
-
-                IconButton(onClick = { /* Arahkan ke profil */ }) {
-                    // --- 2. UBAH DI SINI: Gunakan painterResource ---
-                    Icon(
-                        // Pastikan Anda punya file 'ic_person' di drawable
-                        painter = painterResource(id = R.drawable.ic_person),
-                        contentDescription = "Profil",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(28.dp)) // ruang kosong pengganti ikon profil
             }
 
             // --- Baris Bawah: Tombol Aksi ---

@@ -1,5 +1,6 @@
 package com.example.mykasir.navigationapp
 
+import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,6 +9,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -15,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +27,7 @@ import com.example.mykasir.feature_manajemen_produk.navigation.ManajemenProdukNa
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.feature_transaksi.navigation.TransaksiNav
 import com.example.mykasir.feature_laporan.LaporanScreen
+import com.example.mykasir.feature_home.DashboardHomeScreen
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import com.example.mykasir.feature_laporan.SalesReportPage
 import com.example.mykasir.feature_laporan.ChartPage
@@ -33,7 +37,8 @@ val kasirNavItems = listOf(
     NavItem("Beranda", Icons.Filled.Home, "home"),
     NavItem("Stok", Icons.Filled.Inventory2, "package"),
     NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
-    NavItem("Laporan", Icons.Filled.Description, "docs")
+    NavItem("Laporan", Icons.Filled.Description, "docs"),
+    NavItem("Profil", Icons.Filled.Person, "profile")
 )
 
 /**
@@ -61,10 +66,44 @@ fun MainAppHost() {
         NavHost(
             navController = mainNavController,
             startDestination = "home",
-            modifier = Modifier.padding(innerPadding) // Padding dari Scaffold
+            modifier = Modifier.padding(innerPadding)
         ) {
 
-            // Rute "home" akan menampilkan SELURUH alur fitur Manajemen Produk
+            composable("home") {
+                DashboardHomeScreen(
+                    transaksiViewModel = transaksiViewModel,
+                    productViewModel = productViewModel,
+                    onOpenTransaksi = {
+                        mainNavController.navigate("wallet") {
+                            popUpTo(mainNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenProduk = {
+                        mainNavController.navigate("package") {
+                            popUpTo(mainNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenLaporan = {
+                        mainNavController.navigate("docs") {
+                            popUpTo(mainNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+
+            // Rute "package" akan menampilkan SELURUH alur fitur Manajemen Produk
             composable("package") {
                 // Di sinilah kita memanggil NavGraph dari fitur Anda.
                 // Kita buat NavController terpisah untuk alur internal fitur tsb.
@@ -108,7 +147,12 @@ fun MainAppHost() {
                     }
                 }
             }
-            composable("home") { PlaceholderScreen("Halaman Home") }
+            // Rute profil sederhana
+            composable("profile") {
+                PlaceholderScreen(text = "profil dulu")
+            }
+
+            // rute home kini di-handle oleh DashboardHomeScreen di atas
         }
     }
 }
