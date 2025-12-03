@@ -1,35 +1,33 @@
 package com.example.mykasir.feature_transaksi.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.painterResource
 import com.example.mykasir.R
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.IconButtonDefaults
-import com.example.mykasir.feature_transaksi.model.Customer
-import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import com.example.mykasir.core_ui.LocalNotifier
 import com.example.mykasir.core_ui.NotificationType
-import androidx.compose.ui.graphics.Color
+import com.example.mykasir.feature_transaksi.model.Customer
+import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 
 @Composable
 fun TransaksiListScreen(
@@ -39,12 +37,20 @@ fun TransaksiListScreen(
 ) {
     val notifier = LocalNotifier.current
     var customerToDelete by remember { mutableStateOf<Customer?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primary)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    )
+                )
+            )
     ) {
-        // HEADER BIRU (konsisten dengan beranda, tanpa ikon profil) + tombol tambah
+        // HEADER dengan warna sama seperti header beranda + tombol tambah
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,7 +84,7 @@ fun TransaksiListScreen(
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
-                Spacer(modifier = Modifier.width(28.dp)) // ruang kosong pengganti ikon profil
+                Spacer(modifier = Modifier.width(28.dp))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -129,6 +135,7 @@ fun TransaksiListScreen(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
                 val transactedCustomers = viewModel.customers.filter { c ->
                     viewModel.transactionsFor(c.id).isNotEmpty()
                 }

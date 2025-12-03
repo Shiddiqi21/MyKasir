@@ -1,7 +1,6 @@
 package com.example.mykasir.feature_transaksi.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -33,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +46,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TextFieldDefaults
 import com.example.mykasir.core_ui.LocalNotifier
@@ -82,41 +81,6 @@ fun TransaksiFormScreen(
                         IconButton(onClick = { showCartSheet = true }) {
                             Icon(Icons.Filled.ShoppingCart, contentDescription = "Keranjang", tint = MaterialTheme.colorScheme.onPrimary)
                         }
-
-            // Konfirmasi hapus item keranjang
-            val pendingDelete = itemToDelete
-            if (pendingDelete != null) {
-                AlertDialog(
-                    onDismissRequest = { itemToDelete = null },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                viewModel.removeItem(pendingDelete)
-                                notifier?.show("Item dihapus", NotificationType.Success, 1200)
-                                itemToDelete = null
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        ) { Text("Hapus") }
-                    },
-                    dismissButton = {
-                        OutlinedButton(
-                            onClick = { itemToDelete = null },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp)
-                        ) { Text("Batal") }
-                    },
-                    icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                    title = { Text("Hapus Item Keranjang", fontWeight = FontWeight.Bold) },
-                    text = { Text("Apakah Anda yakin ingin menghapus ${pendingDelete.productName} dari keranjang?") },
-                    shape = RoundedCornerShape(20.dp),
-                    containerColor = Color.White,
-                    tonalElevation = 6.dp
-                )
-            }
                     }
                 }
             )
@@ -131,7 +95,7 @@ fun TransaksiFormScreen(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Kontainer besar putih untuk area kategori + produk
+            // Kontainer besar putih untuk area kategori + produk (desain awal)
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -234,8 +198,8 @@ fun TransaksiFormScreen(
             }
         }
 
-            if (showCustomerDialog) {
-                AlertDialog(
+        if (showCustomerDialog) {
+            AlertDialog(
                     onDismissRequest = { showCustomerDialog = false },
                     confirmButton = {
                         TextButton(
@@ -294,17 +258,17 @@ fun TransaksiFormScreen(
                 )
             }
 
-            if (showCartSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showCartSheet = false },
-                    sheetState = sheetState
+        if (showCartSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showCartSheet = false },
+                sheetState = sheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         Text(
                             "Keranjang",
                             style = MaterialTheme.typography.titleLarge,
@@ -418,11 +382,64 @@ fun TransaksiFormScreen(
                                     .fillMaxWidth()
                                     .padding(top = 8.dp),
                                 shape = RoundedCornerShape(50.dp)
-                            ) { Text("Lanjutkan", fontWeight = FontWeight.SemiBold) }
+                            ) {
+                                Text("Lanjutkan", fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Dialog konfirmasi hapus item dari keranjang
+        val pendingToDelete = itemToDelete
+        if (pendingToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { itemToDelete = null },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.removeItem(pendingToDelete)
+                            itemToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Hapus", fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { itemToDelete = null },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Batal")
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Hapus dari keranjang",
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Yakin ingin menghapus ${pendingToDelete.productName} dari keranjang?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White,
+                tonalElevation = 0.dp
+            )
         }
     }
 }

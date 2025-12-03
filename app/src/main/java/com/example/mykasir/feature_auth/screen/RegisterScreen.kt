@@ -2,7 +2,6 @@ package com.example.mykasir.feature_auth.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -27,17 +28,20 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,18 +62,35 @@ fun RegisterScreen(
     val passwordState = remember { mutableStateOf("") }
     val confirmPasswordState = remember { mutableStateOf("") }
 
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        label = "registerContentAlpha"
+    )
+    val contentOffset by animateDpAsState(
+        targetValue = if (visible) 0.dp else 12.dp,
+        label = "registerContentOffset"
+    )
+
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = Color.White
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(32.dp))
+
             Image(
                 painter = painterResource(id = R.drawable.mykasir_logo),
                 contentDescription = "MyKasir Logo",
@@ -79,17 +100,30 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Create your Account",
-                style = MaterialTheme.typography.headlineSmall,
+                text = "Buat Akun Baru",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Daftar untuk mulai menggunakan MyKasir",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Card untuk form registrasi
             Card(
-                modifier = Modifier.fillMaxWidth(0.95f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = contentAlpha
+                        translationY = contentOffset.toPx()
+                    },
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF)),
                 elevation = CardDefaults.cardElevation(2.dp)
@@ -97,7 +131,7 @@ fun RegisterScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 18.dp),
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Name
@@ -244,14 +278,14 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Divider dengan teks "Or sign up with"
+            // Divider dengan teks "Atau daftar dengan"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Divider(modifier = Modifier.weight(1f))
                 Text(
-                    text = "  Or sign up with  ",
+                    text = "  Atau daftar dengan  ",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -261,50 +295,75 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Google
                 Surface(
+                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(50),
                     tonalElevation = 0.dp,
                     border = BorderStroke(1.dp, Color(0xFFE0E3EB))
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .height(46.dp)
-                            .width(46.dp)
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = "Daftar dengan Google"
+                            contentDescription = "Daftar dengan Google",
+                            modifier = Modifier.height(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Google",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
 
                 // Facebook
                 Surface(
+                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(50),
                     tonalElevation = 0.dp,
                     border = BorderStroke(1.dp, Color(0xFFE0E3EB))
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .height(46.dp)
-                            .width(46.dp)
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_facebook_logo),
-                            contentDescription = "Daftar dengan Facebook"
+                            contentDescription = "Daftar dengan Facebook",
+                            modifier = Modifier.height(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Facebook",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Sudah punya akun?",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = onBack,
@@ -314,7 +373,7 @@ fun RegisterScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4F5C)),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = "Back to Login", color = Color.White)
+                Text(text = "Kembali ke Login", color = Color.White)
             }
         }
     }

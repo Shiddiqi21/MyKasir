@@ -33,6 +33,9 @@ import com.example.mykasir.core_ui.formatRupiah
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,10 +83,27 @@ fun SalesReportPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Laporan Penjualan", color = MaterialTheme.colorScheme.onPrimary) },
+                title = {
+                    Column {
+                        Text(
+                            "Laporan Penjualan",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            if (mode == ReportModeSR.Daily) "Ringkasan penjualan harian" else "Ringkasan penjualan bulanan",
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -98,64 +118,82 @@ fun SalesReportPage(
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
+            // Seluruh isi laporan bisa discroll sampai tombol ekspor
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                    // Segmented toggle Harian / Bulanan + tanggal dalam satu kartu filter
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FA)),
-                        elevation = CardDefaults.cardElevation(0.dp)
+                // Segmented toggle Harian / Bulanan + tanggal dalam satu kartu filter
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F9FC)),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
+                        Text(
+                            text = "Periode Laporan",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                .background(
+                                    color = Color(0xFFE3ECF7),
+                                    shape = RoundedCornerShape(24.dp)
+                                )
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(
+                            TogglePill(
+                                text = "Harian",
+                                selected = mode == ReportModeSR.Daily
+                            ) { mode = ReportModeSR.Daily }
+                            Spacer(Modifier.width(8.dp))
+                            TogglePill(
+                                text = "Bulanan",
+                                selected = mode == ReportModeSR.Monthly
+                            ) { mode = ReportModeSR.Monthly }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            val displayDate = if (mode == ReportModeSR.Daily) {
+                                sdf.format(Date(selectedTime))
+                            } else {
+                                monthFormat.format(Date(selectedTime))
+                            }
+                            OutlinedTextField(
+                                value = displayDate,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { showDatePicker = true }) {
+                                        Icon(Icons.Filled.CalendarMonth, contentDescription = null)
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F1F1), RoundedCornerShape(24.dp))
-                                    .padding(4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TogglePill(text = "Harian", selected = mode == ReportModeSR.Daily) { mode = ReportModeSR.Daily }
-                                Spacer(Modifier.width(8.dp))
-                                TogglePill(text = "Bulanan", selected = mode == ReportModeSR.Monthly) { mode = ReportModeSR.Monthly }
-                            }
-
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                val displayDate = if (mode == ReportModeSR.Daily) {
-                                    sdf.format(Date(selectedTime))
-                                } else {
-                                    monthFormat.format(Date(selectedTime))
-                                }
-                                OutlinedTextField(
-                                    value = displayDate,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    trailingIcon = {
-                                        IconButton(onClick = { showDatePicker = true }) {
-                                            Icon(Icons.Filled.CalendarMonth, contentDescription = null)
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { showDatePicker = true }
-                                )
-                            }
+                                    .clickable { showDatePicker = true },
+                                shape = RoundedCornerShape(14.dp)
+                            )
                         }
                     }
+                }
 
                 if (showDatePicker) {
                     if (mode == ReportModeSR.Daily) {
@@ -190,20 +228,24 @@ fun SalesReportPage(
                 }
 
                 // Tabel laporan dengan striping baris halus
-                Card(shape = RoundedCornerShape(16.dp)) {
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFBFD)),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         TableHeader()
-                        LazyColumn {
-                            itemsIndexed(rows) { index, r ->
-                                val bg = if (index % 2 == 0) Color(0xFFFFFFFF) else Color(0xFFF7F7FB)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(bg)
-                                ) {
-                                    TableRow(r)
-                                }
+                        Divider(color = Color(0xFFE0E6F0), thickness = 1.dp)
+                        rows.forEachIndexed { index, r ->
+                            val bg = if (index % 2 == 0) Color(0xFFFFFFFF) else Color(0xFFF4F6FB)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(bg)
+                            ) {
+                                TableRow(r)
                             }
+                            Divider(color = Color(0xFFE9EDF5), thickness = 0.5.dp)
                         }
                     }
                 }
@@ -225,68 +267,89 @@ fun SalesReportPage(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFF5F7FA), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .background(Color(0xFFEFF4FB), RoundedCornerShape(14.dp))
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Jumlah: $itemCount", fontWeight = FontWeight.SemiBold)
-                    Text("Total: ${formatRupiah(grandTotal)}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Text("Jumlah transaksi", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        Text("$itemCount", fontWeight = FontWeight.SemiBold)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        Text(
+                            formatRupiah(grandTotal),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 18.sp
+                        )
+                    }
                 }
 
                 // Tombol aksi export
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FA)),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F9FC)),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                pendingPdf = rows
-                                pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD32F2F),
-                                contentColor = Color.White
-                            )
+                        Text(
+                            text = "Ekspor Laporan",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Description,
-                                contentDescription = null
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("PDF", style = MaterialTheme.typography.labelMedium)
-                        }
+                            Button(
+                                onClick = {
+                                    pendingPdf = rows
+                                    pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFD32F2F),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Description,
+                                    contentDescription = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("PDF", style = MaterialTheme.typography.labelMedium)
+                            }
 
-                        Button(
-                            onClick = {
-                                val csv = buildCsv(rows)
-                                pendingCsv = csv
-                                csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF388E3C),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.TableChart,
-                                contentDescription = null
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Excel", style = MaterialTheme.typography.labelMedium)
+                            Button(
+                                onClick = {
+                                    val csv = buildCsv(rows)
+                                    pendingCsv = csv
+                                    csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF388E3C),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.TableChart,
+                                    contentDescription = null
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Excel", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
                 }

@@ -29,7 +29,11 @@ import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.core_ui.LocalNotifier
 import com.example.mykasir.core_ui.NotificationType
 import com.example.mykasir.feature_manajemen_produk.model.Product
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +43,32 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
     val notifier = LocalNotifier.current
     var productToDelete by remember { mutableStateOf<Product?>(null) }
 
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        label = "stokContentAlpha"
+    )
+    val contentOffset by animateDpAsState(
+        targetValue = if (visible) 0.dp else 12.dp,
+        label = "stokContentOffset"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primary)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    )
+                )
+            )
     ) {
         // HEADER BIRU (konsisten dengan beranda, tanpa ikon profil)
         Column(
@@ -134,7 +160,12 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
 
         // --- 2. AREA KONTEN (PUTIH MELENGKUNG) ---
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    alpha = contentAlpha
+                    translationY = contentOffset.toPx()
+                },
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
@@ -311,65 +342,153 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
             }
         }
 
-        // Konfirmasi hapus produk (lebih kontekstual & menarik)
+        // Konfirmasi hapus produk (popup modern)
         val pending = productToDelete
         if (pending != null) {
             AlertDialog(
                 onDismissRequest = { productToDelete = null },
-                icon = {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
-                                shape = RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
                 title = {
-                    Text(
-                        text = "Hapus produk?",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Yakin ingin menghapus \"${pending.name}\" dari daftar produk?",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.deleteProduct(pending)
-                            notifier?.show("Produk dihapus", NotificationType.Success, 1500)
-                            productToDelete = null
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        shape = RoundedCornerShape(10.dp)
+                    // Kita akan bungkus konten di dalam Surface bercorak
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFFFDFBFF)
                     ) {
-                        Text("Hapus")
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                                .padding(horizontal = 20.dp, vertical = 20.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                // Aksen garis kecil di atas
+                                Box(
+                                    modifier = Modifier
+                                        .width(42.dp)
+                                        .height(3.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                                    Color.Transparent
+                                                )
+                                            ),
+                                            shape = RoundedCornerShape(20.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White.copy(alpha = 0.9f)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.padding(10.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Text(
+                                    text = "Yakin hapus produk ini?",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = pending.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "Akan dihapus dari daftar stok.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "Tindakan ini tidak dapat dibatalkan.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.9f)
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { productToDelete = null },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(50)
+                                    ) {
+                                        Text("Batal")
+                                    }
+                                    Button(
+                                        onClick = {
+                                            viewModel.deleteProduct(pending)
+                                            notifier?.show("Produk dihapus", NotificationType.Success, 1500)
+                                            productToDelete = null
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError
+                                        ),
+                                        shape = RoundedCornerShape(50)
+                                    ) {
+                                        Text("Ya, hapus")
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
-                dismissButton = {
-                    TextButton(onClick = { productToDelete = null }) {
-                        Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
+                text = {},
+                confirmButton = {},
+                dismissButton = {}
             )
         }
     }   

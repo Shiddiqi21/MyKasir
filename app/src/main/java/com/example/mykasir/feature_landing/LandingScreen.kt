@@ -6,8 +6,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,6 +30,21 @@ fun LandingScreen(onFinished: () -> Unit) {
         onFinished()
     }
 
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        label = "landingContentAlpha"
+    )
+    val contentOffset by animateDpAsState(
+        targetValue = if (visible) 0.dp else 12.dp,
+        label = "landingContentOffset"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -31,7 +53,11 @@ fun LandingScreen(onFinished: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.graphicsLayer {
+                alpha = contentAlpha
+                translationY = contentOffset.toPx()
+            }
         ) {
             Image(
                 painter = painterResource(id = R.drawable.mykasir_logo),
