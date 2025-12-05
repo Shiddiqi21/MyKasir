@@ -1,4 +1,4 @@
-package com.example.mykasir.navigationapp
+﻿package com.example.mykasir.navigationapp
 
 import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.Box
@@ -31,6 +31,8 @@ import com.example.mykasir.feature_home.DashboardHomeScreen
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import com.example.mykasir.feature_laporan.SalesReportPage
 import com.example.mykasir.feature_laporan.ChartPage
+import com.example.mykasir.feature_profil.screen.ProfileScreen
+import com.example.mykasir.feature_profil.navigation.profileNav
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
