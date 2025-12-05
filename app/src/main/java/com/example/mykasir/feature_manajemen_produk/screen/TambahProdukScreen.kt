@@ -163,12 +163,20 @@ fun TambahProdukScreen(
                                 minStock = minStok.toIntOrNull() ?: 0,
                                 imageUri = selectedImageUri?.toString()
                             )
-                            viewModel.updateProduct(updatedProduct)
-                            notifier?.show("Produk berhasil diperbarui", NotificationType.Success, 1800)
+                            viewModel.updateProduct(
+                                updatedProduct,
+                                onSuccess = {
+                                    notifier?.show("Produk berhasil diperbarui", NotificationType.Success, 1800)
+                                    navController.popBackStack()
+                                },
+                                onError = { error ->
+                                    notifier?.show(error, NotificationType.Error, 2000)
+                                }
+                            )
                         } else {
                             // Jika Mode Tambah, panggil addProduct
                             val newProduct = Product(
-                                id = System.currentTimeMillis(),
+                                id = System.currentTimeMillis(), // Akan diganti oleh server
                                 name = nama,
                                 category = kategori,
                                 price = harga.toIntOrNull() ?: 0,
@@ -176,12 +184,18 @@ fun TambahProdukScreen(
                                 minStock = minStok.toIntOrNull() ?: 0,
                                 imageUri = selectedImageUri?.toString()
                             )
-                            viewModel.addProduct(newProduct)
-                            notifier?.show("Produk berhasil disimpan", NotificationType.Success, 1800)
+                            viewModel.addProduct(
+                                newProduct,
+                                onSuccess = {
+                                    notifier?.show("Produk berhasil disimpan", NotificationType.Success, 1800)
+                                    navController.popBackStack()
+                                },
+                                onError = { error ->
+                                    notifier?.show(error, NotificationType.Error, 2000)
+                                }
+                            )
                         }
                         // ---------------------------------
-
-                        navController.popBackStack() // Kembali ke layar sebelumnya
                     }
                 },
                 colors = ButtonDefaults.buttonColors(

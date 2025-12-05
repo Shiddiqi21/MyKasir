@@ -1,21 +1,34 @@
 package com.example.mykasir.feature_transaksi.viewmodel
 
+import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.mykasir.core_data.local.TokenManager
+import com.example.mykasir.core_data.remote.CustomerRequest
+import com.example.mykasir.core_data.remote.RetrofitClient
+import com.example.mykasir.core_data.remote.TransactionItemRequest
+import com.example.mykasir.core_data.remote.TransactionRequest
 import com.example.mykasir.feature_transaksi.model.Customer
 import com.example.mykasir.feature_transaksi.model.Transaction
 import com.example.mykasir.feature_transaksi.model.TransactionItem
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
-class TransaksiViewModel : ViewModel() {
-    // Sample pelanggan
-    var customers = mutableStateListOf(
-        Customer(name = "Hamsi"),
-        Customer(name = "Hazmi"),
-        Customer(name = "Hismi")
-    )
+class TransaksiViewModel(application: Application) : AndroidViewModel(application) {
+    
+    private val apiService = RetrofitClient.apiService
+    private val tokenManager = TokenManager(application)
+
+    // Sample pelanggan (akan diload dari API)
+    var customers = mutableStateListOf<Customer>()
         private set
 
     // Form state
@@ -35,11 +48,133 @@ class TransaksiViewModel : ViewModel() {
     val total: Int
         get() = currentItems.sumOf { it.unitPrice * it.quantity }.coerceAtLeast(0)
 
-    // In-memory saved transactions
+    // In-memory saved transactions (akan diload dari API)
     var transactions = mutableStateListOf<Transaction>()
         private set
 
     val hasTransactions: Boolean get() = transactions.isNotEmpty()
+
+    // UI State untuk loading dan error
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
+    init {
+        Log.d("TransaksiViewModel", "ViewModel initialized, loading customers and transactions from API")
+        loadCustomers()
+        loadTransactions()
+    }
+
+    // Load semua customer dari API
+    fun loadCustomers() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("TransaksiViewModel", "Loading customers from API")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    _errorMessage.value = "Token tidak ditemukan, silakan login ulang"
+                    Log.e("TransaksiViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val response = apiService.getAllCustomers("Bearer $token")
+                
+                if (response.status == "success") {
+                    val apiCustomers = response.data ?: emptyList()
+                    Log.d("TransaksiViewModel", "Successfully loaded ${apiCustomers.size} customers from API")
+                    
+                    customers.clear()
+                    customers.addAll(apiCustomers.map { apiCustomer ->
+                        Customer(
+                            id = apiCustomer.id,
+                            name = apiCustomer.name,
+                            phone = apiCustomer.phone ?: "",
+                            address = apiCustomer.address ?: ""
+                        )
+                    })
+                    Log.d("TransaksiViewModel", "Customers list updated: ${customers.size} items")
+                } else {
+                    _errorMessage.value = "Gagal memuat pelanggan: ${response.message}"
+                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                }
+            } catch (e: HttpException) {
+                _errorMessage.value = "Error jaringan: ${e.message}"
+                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                _errorMessage.value = "Koneksi gagal, periksa internet Anda"
+                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                _errorMessage.value = "Error: ${e.message}"
+                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Load semua transactions dari API
+    fun loadTransactions() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("TransaksiViewModel", "Loading transactions from API")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    _errorMessage.value = "Token tidak ditemukan, silakan login ulang"
+                    Log.e("TransaksiViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val response = apiService.getAllTransactions("Bearer $token")
+                
+                if (response.status == "success") {
+                    val apiTransactions = response.data ?: emptyList()
+                    Log.d("TransaksiViewModel", "Successfully loaded ${apiTransactions.size} transactions from API")
+                    
+                    transactions.clear()
+                    transactions.addAll(apiTransactions.map { apiTx ->
+                        Transaction(
+                            id = apiTx.id,
+                            customerId = apiTx.customerId,
+                            items = apiTx.items.map { item ->
+                                TransactionItem(
+                                    productName = item.productName,
+                                    unitPrice = item.unitPrice,
+                                    quantity = item.quantity
+                                )
+                            },
+                            total = apiTx.total,
+                            createdAt = apiTx.createdAt
+                        )
+                    })
+                    Log.d("TransaksiViewModel", "Transactions list updated: ${transactions.size} items")
+                } else {
+                    _errorMessage.value = "Gagal memuat transaksi: ${response.message}"
+                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                }
+            } catch (e: HttpException) {
+                _errorMessage.value = "Error jaringan: ${e.message}"
+                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                _errorMessage.value = "Koneksi gagal, periksa internet Anda"
+                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                _errorMessage.value = "Error: ${e.message}"
+                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun resetForm() {
         customerNameText = ""
@@ -49,16 +184,97 @@ class TransaksiViewModel : ViewModel() {
         currentItems.clear()
     }
 
+    // Create customer via API
+    fun createCustomer(name: String, phone: String = "", address: String = "", onSuccess: (Customer) -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("TransaksiViewModel", "Creating customer: $name")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    val error = "Token tidak ditemukan, silakan login ulang"
+                    _errorMessage.value = error
+                    onError(error)
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val requestBody = CustomerRequest(
+                    name = name
+                )
+
+                val response = apiService.createCustomer("Bearer $token", requestBody)
+                
+                if (response.status == "success") {
+                    val newCustomer = response.data
+                    Log.d("TransaksiViewModel", "Customer created successfully with ID: ${newCustomer?.id}")
+                    
+                    if (newCustomer != null) {
+                        val customer = Customer(
+                            id = newCustomer.id,
+                            name = newCustomer.name,
+                            phone = newCustomer.phone ?: "",
+                            address = newCustomer.address ?: ""
+                        )
+                        customers.add(customer)
+                        onSuccess(customer)
+                    }
+                } else {
+                    val error = "Gagal membuat pelanggan: ${response.message}"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                }
+            } catch (e: Exception) {
+                val error = "Error: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun removeCustomer(customer: Customer) {
-        customers.remove(customer)
+        viewModelScope.launch {
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) return@launch
+
+                // Hapus semua transaksi yang terkait dengan customer ini
+                val customerTransactions = transactions.filter { it.customerId == customer.id }
+                for (transaction in customerTransactions) {
+                    try {
+                        val txResponse = apiService.deleteTransaction("Bearer $token", transaction.id)
+                        if (txResponse.status == "success") {
+                            transactions.remove(transaction)
+                            Log.d("TransaksiViewModel", "Transaction deleted: ${transaction.id}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("TransaksiViewModel", "Error deleting transaction ${transaction.id}: ${e.message}", e)
+                    }
+                }
+
+                // Kemudian hapus customer
+                val response = apiService.deleteCustomer("Bearer $token", customer.id)
+                if (response.status == "success") {
+                    customers.remove(customer)
+                    Log.d("TransaksiViewModel", "Customer deleted: ${customer.id}")
+                }
+            } catch (e: Exception) {
+                Log.e("TransaksiViewModel", "Error deleting customer: ${e.message}", e)
+            }
+        }
     }
 
     private fun findOrCreateCustomerByName(name: String): Customer {
         val trimmed = name.trim()
-        val existing = customers.firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
-        if (existing != null) return existing
-        val newCust = Customer(name = trimmed.ifBlank { "Pelanggan" })
-        customers.add(newCust)
+        // Selalu buat customer baru untuk setiap transaksi
+        // Tidak menggabungkan dengan customer yang sudah ada
+        val newCust = Customer(id = 0, name = trimmed.ifBlank { "Pelanggan" })
         return newCust
     }
 
@@ -101,25 +317,119 @@ class TransaksiViewModel : ViewModel() {
         }
     }
 
-    fun saveTransaction(customerName: String): Long {
-        val customer = findOrCreateCustomerByName(customerName)
-        if (currentItems.isEmpty()) return customer.id
-        val tx = Transaction(
-            customerId = customer.id,
-            items = currentItems.toList(),
-            total = total
-        )
-        transactions.add(tx)
-        currentItems.clear()
-        return customer.id
+    // Save transaction via API
+    fun saveTransaction(customerName: String, onSuccess: (Long) -> Unit = {}, onError: (String) -> Unit = {}) {
+        if (currentItems.isEmpty()) {
+            onError("Keranjang kosong")
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("TransaksiViewModel", "Saving transaction for customer: $customerName")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    val error = "Token tidak ditemukan, silakan login ulang"
+                    _errorMessage.value = error
+                    onError(error)
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                // Find or create customer
+                var customer = findOrCreateCustomerByName(customerName)
+                
+                // Jika customer baru (id=0), buat dulu via API
+                if (customer.id == 0L) {
+                    Log.d("TransaksiViewModel", "Creating new customer: ${customer.name}")
+                    val createResponse = apiService.createCustomer(
+                        "Bearer $token",
+                        CustomerRequest(name = customer.name)
+                    )
+                    
+                    if (createResponse.status == "success") {
+                        val newCustomer = createResponse.data
+                        if (newCustomer != null) {
+                            customer = Customer(
+                                id = newCustomer.id,
+                                name = newCustomer.name,
+                                phone = newCustomer.phone ?: "",
+                                address = newCustomer.address ?: ""
+                            )
+                            customers.add(customer)
+                            Log.d("TransaksiViewModel", "New customer created with ID: ${customer.id}")
+                        }
+                    } else {
+                        val error = "Gagal membuat pelanggan: ${createResponse.message}"
+                        _errorMessage.value = error
+                        onError(error)
+                        _isLoading.value = false
+                        return@launch
+                    }
+                }
+
+                // Sekarang buat transaction
+                val requestBody = TransactionRequest(
+                    customerId = customer.id,
+                    items = currentItems.map { item ->
+                        TransactionItemRequest(
+                            productName = item.productName,
+                            unitPrice = item.unitPrice,
+                            quantity = item.quantity
+                        )
+                    }
+                )
+
+                Log.d("TransaksiViewModel", "Transaction request: $requestBody")
+
+                val response = apiService.createTransaction("Bearer $token", requestBody)
+                
+                if (response.status == "success") {
+                    val newTransaction = response.data
+                    Log.d("TransaksiViewModel", "Transaction created successfully with ID: ${newTransaction?.id}")
+                    
+                    // Reload transactions
+                    loadTransactions()
+                    
+                    // Clear cart
+                    currentItems.clear()
+                    
+                    onSuccess(customer.id)
+                } else {
+                    val error = "Gagal menyimpan transaksi: ${response.message}"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("TransaksiViewModel", error)
+                }
+            } catch (e: HttpException) {
+                val error = "Error jaringan: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                val error = "Koneksi gagal, periksa internet Anda"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                val error = "Error: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun transactionsFor(customerId: Long): List<Transaction> =
         transactions.filter { it.customerId == customerId }
 
     fun finalizeAllTransactions(): Int {
-        // Di tahap ini kita hanya mengonfirmasi penyimpanan (tanpa backend),
-        // jadi biarkan data tetap ada agar daftar pelanggan dengan transaksi tetap tampil.
+        // Sudah tersimpan di backend, tidak perlu action tambahan
         return transactions.size
     }
 }

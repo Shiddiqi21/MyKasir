@@ -12,9 +12,10 @@ data class TransactionItem(
 )
 
 data class Transaction(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = 0,
     val customerId: Long,
     val items: List<TransactionItem>,
     val total: Int,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val createdAt: String? = null
 )

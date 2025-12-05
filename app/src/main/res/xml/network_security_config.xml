@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Development helper: allow cleartext HTTP for local emulator and local network
+         Use only for development. Remove or restrict for production. -->
+
+    <!-- Option A: allow cleartext for all domains (quick, permissive) -->
+    <base-config cleartextTrafficPermitted="true" />
+
+    <!-- Option B (alternative, more restrictive): allow only specific domain/ip
+    <domain-config cleartextTrafficPermitted="true">
+        <domain>10.0.2.2</domain>
+    </domain-config>
+    -->
+</network-security-config>

@@ -75,6 +75,9 @@ dependencies {
 
     // 4. OkHttp (Dibutuhkan oleh Retrofit)
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    
+    // 5. OkHttp Logging Interceptor (untuk debug network)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
 
     // ✅ Testing

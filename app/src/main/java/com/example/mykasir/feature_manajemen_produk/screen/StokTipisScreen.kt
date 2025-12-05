@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mykasir.core_ui.SimpleTopBar
+import com.example.mykasir.core_ui.LocalNotifier
+import com.example.mykasir.core_ui.NotificationType
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.feature_manajemen_produk.component.UpdateStockDialog // <-- 1. IMPORT DIALOG
 import com.example.mykasir.feature_manajemen_produk.model.Product // <-- 2. IMPORT MODEL PRODUK
@@ -21,6 +23,7 @@ import com.example.mykasir.feature_manajemen_produk.model.Product // <-- 2. IMPO
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StokTipisScreen(navController: NavController, viewModel: ProductViewModel) {
+    val notifier = LocalNotifier.current
     val lowStockProducts = viewModel.products.filter { it.stock < it.minStock }
 
     // --- 3. STATE UNTUK DIALOG ---
@@ -52,10 +55,19 @@ fun StokTipisScreen(navController: NavController, viewModel: ProductViewModel) {
                     // Ambil produk yang dipilih dan update stoknya
                     val updatedProduct = selectedProduct!!.copy(stock = newStockValue)
                     // Panggil ViewModel untuk menyimpan
-                    viewModel.updateProduct(updatedProduct) // (Pastikan Anda punya fungsi ini!)
-
-                    showUpdateDialog = false // Tutup dialog
-                    selectedProduct = null // Bersihkan pilihan
+                    viewModel.updateProduct(
+                        updatedProduct,
+                        onSuccess = {
+                            showUpdateDialog = false
+                            selectedProduct = null
+                            notifier?.show("Stok berhasil diupdate", NotificationType.Success, 1500)
+                        },
+                        onError = { error ->
+                            showUpdateDialog = false
+                            selectedProduct = null
+                            notifier?.show(error, NotificationType.Error, 2000)
+                        }
+                    )
                 }
             )
         }

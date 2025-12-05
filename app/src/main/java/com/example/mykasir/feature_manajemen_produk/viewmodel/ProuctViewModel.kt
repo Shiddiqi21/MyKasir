@@ -1,41 +1,278 @@
 package com.example.mykasir.feature_manajemen_produk.viewmodel
 
+import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.mykasir.core_data.local.TokenManager
+import com.example.mykasir.core_data.remote.ProductRequest
+import com.example.mykasir.core_data.remote.RetrofitClient
 import com.example.mykasir.feature_manajemen_produk.model.Product
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
-class ProductViewModel : ViewModel() {
+class ProductViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val apiService = RetrofitClient.apiService
+    private val tokenManager = TokenManager(application)
 
     // State list supaya Compose recompose otomatis saat berubah
     var products = mutableStateListOf<Product>()
         private set
 
+    // UI State untuk loading dan error
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
     init {
-        // contoh data awal lengkap dengan minStock
-        products.addAll(
-            listOf(
-                Product(id = 1L, name = "Susu", category = "Minuman", price = 10000, stock = 10, minStock = 5),
-                Product(id = 2L, name = "Roti", category = "Makanan", price = 8000, stock = 1, minStock = 10),
-                Product(id = 3L, name = "Air Mineral", category = "Minuman", price = 5000, stock = 20, minStock = 5),
-                Product(id = 4L, name = "Jus Alpukat", category = "Minuman", price = 15000, stock = 3, minStock = 5)
-            )
-        )
+        Log.d("ProductViewModel", "ViewModel initialized, loading products from API")
+        loadProducts()
     }
 
-    fun addProduct(product: Product) {
-        products.add(product)
+    // Load semua produk dari API
+    fun loadProducts() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("ProductViewModel", "Starting to load products from API")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    _errorMessage.value = "Token tidak ditemukan, silakan login ulang"
+                    Log.e("ProductViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                Log.d("ProductViewModel", "Token: ${token.take(20)}...")
+                val response = apiService.getAllProducts("Bearer $token")
+                
+                if (response.status == "success") {
+                    val apiProducts = response.data ?: emptyList()
+                    Log.d("ProductViewModel", "Successfully loaded ${apiProducts.size} products from API")
+                    
+                    products.clear()
+                    products.addAll(apiProducts.map { apiProduct ->
+                        Product(
+                            id = apiProduct.id,
+                            name = apiProduct.name,
+                            category = apiProduct.category,
+                            price = apiProduct.price,
+                            stock = apiProduct.stock,
+                            minStock = apiProduct.minStock,
+                            imageUri = apiProduct.imageUri
+                        )
+                    })
+                    Log.d("ProductViewModel", "Products list updated: ${products.size} items")
+                } else {
+                    _errorMessage.value = "Gagal memuat produk: ${response.message}"
+                    Log.e("ProductViewModel", "API error: ${response.message}")
+                }
+                } catch (e: HttpException) {
+                _errorMessage.value = "Error jaringan: ${e.message}"
+                Log.e("ProductViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                _errorMessage.value = "Koneksi gagal, periksa internet Anda"
+                Log.e("ProductViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                _errorMessage.value = "Error: ${e.message}"
+                Log.e("ProductViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
-    fun deleteProduct(product: Product) {
-        products.remove(product)
+    // Tambah produk baru ke API
+    fun addProduct(product: Product, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("ProductViewModel", "Adding product: ${product.name}")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    val error = "Token tidak ditemukan, silakan login ulang"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val requestBody = ProductRequest(
+                    name = product.name,
+                    category = product.category,
+                    price = product.price,
+                    stock = product.stock,
+                    minStock = product.minStock,
+                    imageUri = product.imageUri
+                )
+                Log.d("ProductViewModel", "Request body: $requestBody")
+
+                val response = apiService.createProduct("Bearer $token", requestBody)
+                
+                if (response.status == "success") {
+                    val newProduct = response.data
+                    Log.d("ProductViewModel", "Product created successfully with ID: ${newProduct?.id}")
+                    
+                    // Reload products dari server untuk sinkronisasi
+                    loadProducts()
+                    onSuccess()
+                } else {
+                    val error = "Gagal menambah produk: ${response.message}"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "API error: ${response.message}")
+                }
+            } catch (e: HttpException) {
+                val error = "Error jaringan: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                val error = "Koneksi gagal, periksa internet Anda"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                val error = "Error: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
-    // --- DIUBAH DI SINI ---
-    // Ganti nama 'editProduct' menjadi 'updateProduct' agar sesuai
-    // dengan yang dipanggil di StokTipisScreen
-    fun updateProduct(updated: Product) {
-        val idx = products.indexOfFirst { it.id == updated.id }
-        if (idx >= 0) products[idx] = updated
+    // Update produk di API
+    fun updateProduct(updated: Product, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("ProductViewModel", "Updating product ID: ${updated.id}")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    val error = "Token tidak ditemukan, silakan login ulang"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val requestBody = ProductRequest(
+                    name = updated.name,
+                    category = updated.category,
+                    price = updated.price,
+                    stock = updated.stock,
+                    minStock = updated.minStock,
+                    imageUri = updated.imageUri
+                )
+                Log.d("ProductViewModel", "Update request body: $requestBody")
+
+                val response = apiService.updateProduct("Bearer $token", updated.id, requestBody)
+                
+                if (response.status == "success") {
+                    Log.d("ProductViewModel", "Product updated successfully")
+                    
+                    // Reload products dari server
+                    loadProducts()
+                    onSuccess()
+                } else {
+                    val error = "Gagal update produk: ${response.message}"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "API error: ${response.message}")
+                }
+            } catch (e: HttpException) {
+                val error = "Error jaringan: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                val error = "Koneksi gagal, periksa internet Anda"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                val error = "Error: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
-    // ----------------------
+
+    // Hapus produk dari API
+    fun deleteProduct(product: Product, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            Log.d("ProductViewModel", "Deleting product ID: ${product.id}")
+
+            try {
+                val token = tokenManager.getToken()
+                if (token.isNullOrEmpty()) {
+                    val error = "Token tidak ditemukan, silakan login ulang"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "Token is null or empty")
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                val response = apiService.deleteProduct("Bearer $token", product.id)
+                
+                if (response.status == "success") {
+                    Log.d("ProductViewModel", "Product deleted successfully")
+                    
+                    // Reload products dari server
+                    loadProducts()
+                    onSuccess()
+                } else {
+                    val error = "Gagal hapus produk: ${response.message}"
+                    _errorMessage.value = error
+                    onError(error)
+                    Log.e("ProductViewModel", "API error: ${response.message}")
+                }
+            } catch (e: HttpException) {
+                val error = "Error jaringan: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "HttpException: ${e.message}", e)
+            } catch (e: IOException) {
+                val error = "Koneksi gagal, periksa internet Anda"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "IOException: ${e.message}", e)
+            } catch (e: Exception) {
+                val error = "Error: ${e.message}"
+                _errorMessage.value = error
+                onError(error)
+                Log.e("ProductViewModel", "Exception: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Get produk dengan stok tipis
+    fun getLowStockProducts(): List<Product> {
+        return products.filter { it.stock <= it.minStock }
+    }
 }

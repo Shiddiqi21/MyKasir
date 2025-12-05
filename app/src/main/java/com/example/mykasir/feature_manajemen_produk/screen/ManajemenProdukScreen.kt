@@ -468,9 +468,17 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
                                     }
                                     Button(
                                         onClick = {
-                                            viewModel.deleteProduct(pending)
-                                            notifier?.show("Produk dihapus", NotificationType.Success, 1500)
-                                            productToDelete = null
+                                            viewModel.deleteProduct(
+                                                pending,
+                                                onSuccess = {
+                                                    notifier?.show("Produk dihapus", NotificationType.Success, 1500)
+                                                    productToDelete = null
+                                                },
+                                                onError = { error ->
+                                                    notifier?.show(error, NotificationType.Error, 2000)
+                                                    productToDelete = null
+                                                }
+                                            )
                                         },
                                         modifier = Modifier.weight(1f),
                                         colors = ButtonDefaults.buttonColors(

@@ -206,19 +206,21 @@ fun TransaksiFormScreen(
                             onClick = {
                                 val name = customerNameInput.trim()
                                 if (name.isNotEmpty()) {
-                                    val customerId = viewModel.saveTransaction(name)
-                                    // Kurangi stok produk sesuai item di keranjang (yang barusan disimpan)
-                                    viewModel.transactionsFor(customerId).lastOrNull()?.items?.forEach { item ->
-                                        val p2 = productViewModel.products.firstOrNull { it.name.equals(item.productName, ignoreCase = true) }
-                                        if (p2 != null) {
-                                            val newStock = (p2.stock - item.quantity).coerceAtLeast(0)
-                                            productViewModel.updateProduct(p2.copy(stock = newStock))
+                                    // Save transaction via API
+                                    viewModel.saveTransaction(
+                                        name,
+                                        onSuccess = { customerId ->
+                                            viewModel.resetForm()
+                                            showCustomerDialog = false
+                                            notifier?.show("Transaksi berhasil disimpan", NotificationType.Success, 2000)
+                                            onSaved(customerId)
+                                            // Reload products untuk update stok
+                                            productViewModel.loadProducts()
+                                        },
+                                        onError = { error ->
+                                            notifier?.show(error, NotificationType.Error, 2500)
                                         }
-                                    }
-                                    viewModel.resetForm()
-                                    showCustomerDialog = false
-                                    notifier?.show("Transaksi berhasil disimpan", NotificationType.Success, 2000)
-                                    onSaved(customerId)
+                                    )
                                 }
                             }
                         ) {

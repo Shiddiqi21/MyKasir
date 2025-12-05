@@ -49,18 +49,34 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mykasir.R
+import com.example.mykasir.feature_auth.viewmodel.RegisterUiState
+import com.example.mykasir.feature_auth.viewmodel.RegisterViewModel
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onBack: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onRegisterSuccess: () -> Unit,
+    viewModel: RegisterViewModel = viewModel()
 ) {
     val nameState = remember { mutableStateOf("") }
     val emailState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
     val confirmPasswordState = remember { mutableStateOf("") }
+    
+    val uiState by viewModel.uiState.collectAsState()
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is RegisterUiState.Success -> onRegisterSuccess()
+            is RegisterUiState.Error -> errorMessage = state.message
+            else -> errorMessage = null
+        }
+    }
 
     var visible by remember { mutableStateOf(false) }
 
@@ -263,17 +279,51 @@ fun RegisterScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Error message
+            if (errorMessage != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = errorMessage!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = Color(0xFFC62828),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             Button(
-                onClick = { onRegisterSuccess() },
+                onClick = {
+                    // Validasi password match
+                    if (passwordState.value != confirmPasswordState.value) {
+                        errorMessage = "Password tidak cocok"
+                        return@Button
+                    }
+                    // Call register API
+                    viewModel.register(
+                        email = emailState.value.trim(),
+                        password = passwordState.value,
+                        name = nameState.value.trim()
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(50)
+                shape = RoundedCornerShape(50),
+                enabled = uiState !is RegisterUiState.Loading
             ) {
-                Text(text = "Daftar", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                if (uiState is RegisterUiState.Loading) {
+                    Text(text = "Mendaftar...", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                } else {
+                    Text(text = "Daftar", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
