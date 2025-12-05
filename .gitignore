@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Backend ignores
+BackEnd_MyKasir/node_modules/
+BackEnd_MyKasir/.env
+BackEnd_MyKasir/.idea/
+
