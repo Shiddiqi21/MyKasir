@@ -6,14 +6,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
-import com.example.mykasir.core_ui.SimpleTopBar
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import android.speech.tts.TextToSpeech
 import com.example.mykasir.core_ui.formatRupiah
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import java.text.SimpleDateFormat
@@ -30,9 +36,99 @@ fun TransactionHistoryScreen(
     val transactions = viewModel.transactionsFor(customerId)
     val customerName = viewModel.customers.firstOrNull { it.id == customerId }?.name ?: "Pelanggan"
     val sdf = SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault())
+    val latest = transactions.maxByOrNull { it.timestamp }
+    val context = LocalContext.current
+    
+    // State untuk TTS
+    val tts = remember { TextToSpeech(context, null) }
+    var isSpeaking by remember { mutableStateOf(false) }
+    
+    // Teks yang akan dibaca
+    val receiptText = latest?.let { tx ->
+        buildString {
+            append("Pelanggan $customerName. ")
+            append("Barang dibeli: ")
+            tx.items.forEachIndexed { index, item ->
+                append("${item.productName} ")
+                append("${formatRupiah(item.unitPrice * item.quantity)}")
+                if (index != tx.items.lastIndex) append(", ")
+            }
+            append(". Total ${formatRupiah(tx.total)}.")
+        }
+    } ?: ""
+    
+    // Fungsi untuk mengontrol pembacaan
+    fun toggleSpeak() {
+        if (isSpeaking) {
+            tts.stop()
+            isSpeaking = false
+        } else if (receiptText.isNotEmpty()) {
+            tts.language = Locale("id", "ID")
+            tts.speak(receiptText, TextToSpeech.QUEUE_FLUSH, null, "receipt_${latest?.id}")
+            isSpeaking = true
+        }
+    }
+    
+    // Auto-baca saat layar pertama dibuka
+    LaunchedEffect(Unit) {
+        if (receiptText.isNotEmpty()) {
+            tts.language = Locale("id", "ID")
+            tts.speak(receiptText, TextToSpeech.QUEUE_FLUSH, null, "receipt_${latest?.id}")
+            isSpeaking = true
+        }
+    }
+    
+    // Cleanup TTS saat komponen dihancurkan
+    DisposableEffect(Unit) {
+        onDispose {
+            tts.stop()
+            tts.shutdown()
+        }
+    }
 
     Scaffold(
-        topBar = { SimpleTopBar(title = "Riwayat Transaksi", onBackPress = onBack) },
+        topBar = { 
+            TopAppBar(
+                title = { 
+                    Text(
+                        text = "Riwayat Transaksi",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary 
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = MaterialTheme.colorScheme.onPrimary 
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { toggleSpeak() },
+                        enabled = latest != null
+                    ) {
+                        Icon(
+                            if (isSpeaking) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            contentDescription = if (isSpeaking) "Berhenti" else "Bacakan struk",
+                            tint = if (latest != null) 
+                                if (isSpeaking) MaterialTheme.colorScheme.error 
+                                else MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary, 
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary, 
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary 
+                ),
+                windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
+            )
+        },
         containerColor = MaterialTheme.colorScheme.primary
     ) { innerPadding ->
         Surface(
@@ -110,34 +206,34 @@ fun TransactionHistoryScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
                                             text = "Produk",
-                                            modifier = Modifier.weight(2.2f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.weight(1.9f),
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = "Harga",
-                                            modifier = Modifier.weight(1.2f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.weight(1.5f),
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         )
                                         Text(
                                             text = "Jml",
                                             modifier = Modifier.weight(0.8f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = "Subtotal",
                                             modifier = Modifier.weight(1.4f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -149,32 +245,32 @@ fun TransactionHistoryScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                            .padding(horizontal = 4.dp, vertical = 4.dp),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
                                             text = item.productName,
-                                            modifier = Modifier.weight(2.2f),
+                                            modifier = Modifier.weight(1.9f),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = formatRupiah(item.unitPrice),
-                                            modifier = Modifier.weight(1.2f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.weight(1.5f),
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                                         )
                                         Text(
                                             text = item.quantity.toString(),
                                             modifier = Modifier.weight(0.8f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                                         )
                                         Text(
                                             text = formatRupiah(item.unitPrice * item.quantity),
                                             modifier = Modifier.weight(1.4f),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
                                         )
                                     }
