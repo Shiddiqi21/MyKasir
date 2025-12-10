@@ -11,6 +11,8 @@ class TokenManager(context: Context) {
         private const val KEY_TOKEN: String = "auth_token"
         private const val KEY_EMAIL: String = "user_email"
         private const val KEY_NAME: String = "user_name"
+        private const val KEY_USER_ID: String = "user_id"
+        private const val KEY_ROLE: String = "user_role"
     }
 
     fun saveToken(token: String) {
@@ -41,11 +43,30 @@ class TokenManager(context: Context) {
             .remove(KEY_TOKEN)
             .remove(KEY_EMAIL)
             .remove(KEY_NAME)
+            .remove(KEY_USER_ID)
+            .remove(KEY_ROLE)
             .apply()
     }
 
     fun isLoggedIn(): Boolean {
         return getToken() != null
+    }
+
+    fun saveUserId(userId: Long) {
+        prefs.edit().putLong(KEY_USER_ID, userId).apply()
+    }
+
+    fun getUserId(): Long? {
+        val id = prefs.getLong(KEY_USER_ID, -1L)
+        return if (id == -1L) null else id
+    }
+
+    fun saveUserRole(role: String) {
+        prefs.edit().putString(KEY_ROLE, role).apply()
+    }
+
+    fun getUserRole(): String? {
+        return prefs.getString(KEY_ROLE, null)
     }
 
     fun getAuthHeader(): String {

@@ -31,6 +31,7 @@ import com.example.mykasir.feature_home.DashboardHomeScreen
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import com.example.mykasir.feature_laporan.SalesReportPage
 import com.example.mykasir.feature_laporan.ChartPage
+import com.example.mykasir.feature_profile.navigation.ProfileNav
 
 // Definisikan item navigasi Anda
 val kasirNavItems = listOf(
@@ -46,7 +47,9 @@ val kasirNavItems = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppHost() {
+fun MainAppHost(
+    onLogout: () -> Unit = {}
+) {
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
     // Hoist ViewModel agar dapat dibagikan lintas fitur
@@ -147,9 +150,9 @@ fun MainAppHost() {
                     }
                 }
             }
-            // Rute profil sederhana
+            // Rute profil dengan ProfileNav
             composable("profile") {
-                PlaceholderScreen(text = "profil dulu")
+                ProfileNav(onLogout = onLogout)
             }
 
             // rute home kini di-handle oleh DashboardHomeScreen di atas

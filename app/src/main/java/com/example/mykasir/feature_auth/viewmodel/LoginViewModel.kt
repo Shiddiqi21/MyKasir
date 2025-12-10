@@ -64,7 +64,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("LoginViewModel", "HTTP Error: $errorMsg", e)
                 _uiState.value = LoginUiState.Error(errorMsg)
             } catch (e: IOException) {
-                val errorMsg = "Tidak dapat terhubung ke server. Pastikan backend berjalan di http://10.0.2.2:3000"
+                val errorMsg = "Tidak dapat terhubung ke server. Pastikan koneksi internet lancar dan backend berjalan."
                 Log.e("LoginViewModel", "Network Error: $errorMsg", e)
                 _uiState.value = LoginUiState.Error(errorMsg)
             } catch (e: Exception) {

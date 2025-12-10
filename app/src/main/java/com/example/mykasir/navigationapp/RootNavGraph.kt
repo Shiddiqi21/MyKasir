@@ -76,7 +76,14 @@ fun RootNavGraph() {
             startDestination = "main_host"
         ) {
             composable(route = "main_host") {
-                MainAppHost()
+                MainAppHost(
+                    onLogout = {
+                        // Navigate back to login screen when user logs out
+                        navController.navigate(Graph.AUTH) {
+                            popUpTo(Graph.MAIN) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     }
