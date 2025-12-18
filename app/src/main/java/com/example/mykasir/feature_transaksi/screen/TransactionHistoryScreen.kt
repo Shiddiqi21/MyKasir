@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import android.speech.tts.TextToSpeech
 import com.example.mykasir.core_ui.formatRupiah
+import com.example.mykasir.core_ui.ReceiptPdfGenerator
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -304,6 +306,45 @@ fun TransactionHistoryScreen(
                                             )
                                         }
                                     }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                // Tombol Cetak PDF
+                                Button(
+                                    onClick = {
+                                        val pdfFile = ReceiptPdfGenerator.generateReceipt(
+                                            context = context,
+                                            transaction = tx,
+                                            customerName = customerName
+                                        )
+                                        pdfFile?.let { file ->
+                                            // Simpan ke Downloads
+                                            val saved = ReceiptPdfGenerator.saveToDownloads(context, file)
+                                            if (saved) {
+                                                // Tampilkan notifikasi PDF berhasil disimpan
+                                                com.example.mykasir.core_ui.NotificationHelper.showPdfNotification(context)
+                                            }
+                                            // Tampilkan share dialog
+                                            ReceiptPdfGenerator.sharePdf(context, file)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Print,
+                                        contentDescription = "Cetak PDF",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Cetak Struk PDF",
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 }
                             }
                         }

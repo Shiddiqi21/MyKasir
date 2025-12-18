@@ -13,6 +13,8 @@ import com.example.mykasir.core_data.remote.CustomerRequest
 import com.example.mykasir.core_data.remote.RetrofitClient
 import com.example.mykasir.core_data.remote.TransactionItemRequest
 import com.example.mykasir.core_data.remote.TransactionRequest
+import com.example.mykasir.core_ui.NotificationHelper
+import com.example.mykasir.core_ui.formatRupiah
 import com.example.mykasir.feature_transaksi.model.Customer
 import com.example.mykasir.feature_transaksi.model.Transaction
 import com.example.mykasir.feature_transaksi.model.TransactionItem
@@ -396,6 +398,12 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                     
                     // Clear cart
                     currentItems.clear()
+                    
+                    // Tampilkan notifikasi transaksi berhasil
+                    NotificationHelper.showTransactionNotification(
+                        getApplication(),
+                        formatRupiah(total)
+                    )
                     
                     onSuccess(customer.id)
                 } else {
