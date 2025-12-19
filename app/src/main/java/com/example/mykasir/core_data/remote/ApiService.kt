@@ -23,7 +23,7 @@ interface ApiService {
         @Field("email") email: String,
         @Field("password") password: String,
         @Field("name") name: String,
-        @Field("role") role: String = "kasir"
+        @Field("storeName") storeName: String = ""
     ): ApiResponse<UserData>
 
     @GET("api/auth/profile")
@@ -150,6 +150,36 @@ interface ApiService {
         @Query("startDate") startDate: String? = null,
         @Query("endDate") endDate: String? = null
     ): ApiResponse<List<Transaction>>
+
+    // ==================== COLLABORATORS ====================
+    @GET("api/collaborators")
+    suspend fun getCollaborators(
+        @Header("Authorization") token: String
+    ): ApiResponse<List<com.example.mykasir.feature_collaborator.model.Collaborator>>
+
+    @FormUrlEncoded
+    @POST("api/collaborators")
+    suspend fun addCollaborator(
+        @Header("Authorization") token: String,
+        @Field("email") email: String,
+        @Field("password") password: String,
+        @Field("name") name: String
+    ): ApiResponse<com.example.mykasir.feature_collaborator.model.Collaborator>
+
+    @DELETE("api/collaborators/{id}")
+    suspend fun deleteCollaborator(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): ApiResponse<Unit>
+
+    @FormUrlEncoded
+    @PUT("api/collaborators/{id}")
+    suspend fun updateCollaborator(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long,
+        @Field("name") name: String? = null,
+        @Field("password") password: String? = null
+    ): ApiResponse<com.example.mykasir.feature_collaborator.model.Collaborator>
 }
 
 // ==================== DATA CLASSES ====================
@@ -164,6 +194,8 @@ data class UserData(
     val email: String,
     val name: String,
     val role: String,
+    val storeId: Int,
+    val storeName: String? = null,
     val token: String? = null
 )
 

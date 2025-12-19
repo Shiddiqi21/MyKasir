@@ -22,7 +22,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,6 +32,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,7 +61,8 @@ import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onManageCollaborators: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -234,15 +238,28 @@ fun ProfileScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             
+                            // Store name
+                            Text(
+                                text = profile.storeName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            
                             // Role badge
                             Surface(
                                 shape = RoundedCornerShape(50),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                color = if (profile.isOwner) 
+                                    Color(0xFF4CAF50).copy(alpha = 0.15f) 
+                                else 
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                             ) {
                                 Text(
                                     text = profile.role,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = if (profile.isOwner) 
+                                        Color(0xFF2E7D32) 
+                                    else 
+                                        MaterialTheme.colorScheme.primary,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -274,11 +291,50 @@ fun ProfileScreen(
                             )
                             
                             ProfileInfoCard(
+                                icon = Icons.Filled.Store,
+                                label = "Nama Toko",
+                                value = profile.storeName,
+                                iconColor = Color(0xFF9C27B0)
+                            )
+                            
+                            ProfileInfoCard(
                                 icon = Icons.Filled.Work,
                                 label = "Jabatan",
                                 value = profile.role,
                                 iconColor = MaterialTheme.colorScheme.tertiary
                             )
+                            
+                            // Manage Collaborators button (only for owners)
+                            if (profile.isOwner) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = "Pengaturan Toko",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                OutlinedButton(
+                                    onClick = onManageCollaborators,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.People,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Kelola Kasir",
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                             
                             Spacer(modifier = Modifier.height(24.dp))
                             
@@ -371,3 +427,4 @@ private fun ProfileInfoCard(
         }
     }
 }
+

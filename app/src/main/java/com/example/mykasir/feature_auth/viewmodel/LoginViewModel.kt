@@ -17,7 +17,7 @@ import java.io.IOException
 sealed interface LoginUiState {
     object Idle : LoginUiState
     object Loading : LoginUiState
-    data class Success(val token: String, val email: String) : LoginUiState
+    data class Success(val token: String, val email: String, val role: String) : LoginUiState
     data class Error(val message: String) : LoginUiState
 }
 
@@ -45,14 +45,26 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     password = password
                 )
 
-                Log.d("LoginViewModel", "Login success: ${response.status}, token: ${response.token}")
+                Log.d("LoginViewModel", "Login success: ${response.status}")
 
-                // Simpan token ke SharedPreferences
-                tokenManager.saveToken(response.token)
-                tokenManager.saveUserInfo(response.email, response. email.substringBefore("@"))
-                Log.d("LoginViewModel", "Token saved successfully")
+                // Ambil data dari response
+                val data = response.data
+                if (data != null) {
+                    // Simpan token ke SharedPreferences
+                    tokenManager.saveToken(data.token)
+                    tokenManager.saveUserInfo(
+                        email = data.email,
+                        name = data.name,
+                        role = data.role,
+                        storeId = data.storeId,
+                        storeName = data.storeName ?: ""
+                    )
+                    Log.d("LoginViewModel", "Token saved successfully. Role: ${data.role}")
 
-                _uiState.value = LoginUiState.Success(response.token, response.email)
+                    _uiState.value = LoginUiState.Success(data.token, data.email, data.role)
+                } else {
+                    _uiState.value = LoginUiState.Error("Response data kosong")
+                }
 
             } catch (e: HttpException) {
                 val errorMsg = when (e.code()) {

@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 data class ProfileData(
     val name: String,
     val email: String,
-    val role: String = "Kasir"
+    val role: String,
+    val storeName: String,
+    val isOwner: Boolean
 )
 
 sealed interface ProfileUiState {
@@ -33,13 +35,22 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private fun loadProfile() {
         val email = tokenManager.getUserEmail()
         val name = tokenManager.getUserName()
+        val role = tokenManager.getUserRole()
+        val storeName = tokenManager.getStoreName()
+        val isOwner = tokenManager.isOwner()
         
         if (email != null && name != null) {
             _uiState.value = ProfileUiState.Success(
                 ProfileData(
                     name = name,
                     email = email,
-                    role = "Kasir"
+                    role = when (role) {
+                        "owner" -> "Pemilik Toko"
+                        "cashier" -> "Kasir"
+                        else -> role ?: "Kasir"
+                    },
+                    storeName = storeName ?: "Toko Saya",
+                    isOwner = isOwner
                 )
             )
         } else {
@@ -48,7 +59,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 ProfileData(
                     name = "Pengguna",
                     email = email ?: "email@example.com",
-                    role = "Kasir"
+                    role = "Kasir",
+                    storeName = "Toko Saya",
+                    isOwner = false
                 )
             )
         }
@@ -59,3 +72,4 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         _uiState.value = ProfileUiState.LoggedOut
     }
 }
+

@@ -17,5 +17,7 @@ data class Transaction(
     val items: List<TransactionItem>,
     val total: Int,
     val timestamp: Long = System.currentTimeMillis(),
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val cashierName: String? = null
 )
+

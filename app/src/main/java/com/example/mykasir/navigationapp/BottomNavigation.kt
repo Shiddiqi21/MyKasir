@@ -31,7 +31,8 @@ data class NavItem(
 @Composable
 fun BottomNavBar(
     navController: NavController,
-    items: List<NavItem>
+    items: List<NavItem>,
+    isOwner: Boolean = true  // Default true untuk backward compatibility
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -41,7 +42,8 @@ fun BottomNavBar(
         items.forEach { item ->
             val isSelected = currentDestination?.route == item.route
 
-            val isTransaksi = item.route == "wallet"
+            // Hanya tampilkan FAB biru untuk Transaksi jika user adalah Owner
+            val isTransaksi = item.route == "wallet" && isOwner
 
             NavigationBarItem(
                 selected = isSelected,
@@ -56,7 +58,7 @@ fun BottomNavBar(
                 },
                 icon = {
                     if (isTransaksi) {
-                        // Tombol tengah biru, sedikit lebih besar dari ikon biasa
+                        // Tombol tengah biru, sedikit lebih besar dari ikon biasa (hanya untuk Owner)
                         Box(
                             modifier = Modifier
                                 .size(50.dp)

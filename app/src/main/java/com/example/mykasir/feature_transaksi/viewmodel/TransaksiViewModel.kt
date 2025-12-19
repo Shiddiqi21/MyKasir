@@ -155,7 +155,8 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                                 )
                             },
                             total = apiTx.total,
-                            createdAt = apiTx.createdAt
+                            createdAt = apiTx.createdAt,
+                            cashierName = apiTx.cashierName
                         )
                     })
                     Log.d("TransaksiViewModel", "Transactions list updated: ${transactions.size} items")

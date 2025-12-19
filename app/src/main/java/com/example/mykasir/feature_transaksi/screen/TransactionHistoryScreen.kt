@@ -197,6 +197,11 @@ fun TransactionHistoryScreen(
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
+                                Text(
+                                    text = "Kasir: ${tx.cashierName ?: "-"}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                )
 
                                 Spacer(modifier = Modifier.height(4.dp))
 

@@ -16,7 +16,7 @@ import java.io.IOException
 sealed interface RegisterUiState {
     object Idle : RegisterUiState
     object Loading : RegisterUiState
-    data class Success(val token: String, val email: String) : RegisterUiState
+    data class Success(val token: String, val email: String, val role: String) : RegisterUiState
     data class Error(val message: String) : RegisterUiState
 }
 
@@ -28,7 +28,7 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
     private val _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Idle)
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    fun register(email: String, password: String, name: String) {
+    fun register(email: String, password: String, name: String, storeName: String = "") {
         Log.d("RegisterViewModel", "Attempting register for: $email")
         
         // Validasi input
@@ -56,25 +56,33 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
                     email = email,
                     password = password,
                     name = name,
-                    role = "kasir"
+                    storeName = storeName.ifBlank { "Toko $name" }
                 )
 
                 Log.d("RegisterViewModel", "Register success: ${response.status}")
 
-                // Ambil token dari response.data
-                val token = response.data?.token ?: ""
-                val userName = response.data?.name ?: name
-                
-                // Simpan token ke SharedPreferences
-                tokenManager.saveToken(token)
-                tokenManager.saveUserInfo(email, userName)
-                Log.d("RegisterViewModel", "Token saved successfully")
-                
-                _uiState.value = RegisterUiState.Success(token, email)
+                // Ambil data dari response
+                val data = response.data
+                if (data != null && data.token != null) {
+                    // Simpan token ke SharedPreferences
+                    tokenManager.saveToken(data.token)
+                    tokenManager.saveUserInfo(
+                        email = data.email,
+                        name = data.name,
+                        role = data.role,
+                        storeId = data.storeId,
+                        storeName = data.storeName ?: ""
+                    )
+                    Log.d("RegisterViewModel", "Token saved successfully. Role: ${data.role}")
+                    
+                    _uiState.value = RegisterUiState.Success(data.token, data.email, data.role)
+                } else {
+                    _uiState.value = RegisterUiState.Error("Response data kosong")
+                }
 
             } catch (e: HttpException) {
                 val errorMsg = when (e.code()) {
-                    400 -> "Data tidak valid. Cek email dan password"
+                    400 -> "Data tidak valid atau email sudah terdaftar"
                     409 -> "Email sudah terdaftar"
                     500 -> "Server error, coba lagi nanti"
                     else -> "Error: ${e.code()} - ${e.message}"
@@ -97,3 +105,4 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = RegisterUiState.Idle
     }
 }
+

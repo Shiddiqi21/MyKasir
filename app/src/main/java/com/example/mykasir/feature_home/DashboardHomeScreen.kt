@@ -44,12 +44,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mykasir.R
+import com.example.mykasir.core_data.local.TokenManager
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import java.text.NumberFormat
@@ -65,6 +67,13 @@ fun DashboardHomeScreen(
     onOpenProduk: () -> Unit,
     onOpenLaporan: () -> Unit
 ) {
+    // Get user role
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    val isOwner = remember { tokenManager.isOwner() }
+    val userName = remember { tokenManager.getUserName() ?: "Pengguna" }
+    val userRole = if (isOwner) "Pemilik Toko" else "Kasir"
+    
     val calToday = remember {
         Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -175,7 +184,7 @@ fun DashboardHomeScreen(
 
                         Column {
                             Text(
-                                text = "Halo, Pemilik Toko!",
+                                text = "Halo, $userRole!",
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.labelMedium
                             )
@@ -262,13 +271,16 @@ fun DashboardHomeScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text(
-                        text = "Penjualan 7 Hari Terakhir",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    WeeklySalesChart(points = weeklyPoints)
+                    // Diagram hanya untuk Owner
+                    if (isOwner) {
+                        Text(
+                            text = "Penjualan 7 Hari Terakhir",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        WeeklySalesChart(points = weeklyPoints)
+                    }
 
                     Text(
                         text = "Aksi Cepat",
@@ -294,13 +306,16 @@ fun DashboardHomeScreen(
                             modifier = Modifier.weight(1f),
                             onClick = onOpenProduk
                         )
-                        QuickActionChip(
-                            icon = Icons.Filled.Description,
-                            title = "Laporan",
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.weight(1f),
-                            onClick = onOpenLaporan
-                        )
+                        // Laporan hanya untuk Owner
+                        if (isOwner) {
+                            QuickActionChip(
+                                icon = Icons.Filled.Description,
+                                title = "Laporan",
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f),
+                                onClick = onOpenLaporan
+                            )
+                        }
                     }
 
                     Text(
@@ -363,6 +378,7 @@ fun DashboardHomeScreen(
         }
     }
 }
+
 
 private data class DayPoint(
     val label: String,
