@@ -145,4 +145,60 @@ object NotificationHelper {
             e.printStackTrace()
         }
     }
+    
+    /**
+     * Notifikasi laporan PDF berhasil dibuat
+     */
+    fun showReportPdfNotification(context: Context) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID_PDF)
+            .setSmallIcon(R.drawable.mykasir_logo)
+            .setContentTitle("Laporan PDF Berhasil")
+            .setContentText("📊 Laporan penjualan PDF berhasil diunduh")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        
+        try {
+            NotificationManagerCompat.from(context).notify(notificationId++, notification)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }
+    
+    /**
+     * Notifikasi laporan Excel berhasil dibuat
+     */
+    fun showReportExcelNotification(context: Context) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID_PDF)
+            .setSmallIcon(R.drawable.mykasir_logo)
+            .setContentTitle("Laporan Excel Berhasil")
+            .setContentText("📈 Laporan penjualan Excel berhasil diunduh")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        
+        try {
+            NotificationManagerCompat.from(context).notify(notificationId++, notification)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }
 }

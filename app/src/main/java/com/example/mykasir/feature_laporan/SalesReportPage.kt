@@ -1,5 +1,6 @@
 package com.example.mykasir.feature_laporan
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,20 +23,27 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
-import java.io.OutputStream
 import android.graphics.pdf.PdfDocument
 import android.graphics.Paint
 import com.example.mykasir.core_ui.formatRupiah
+import com.example.mykasir.core_ui.NotificationHelper
+import androidx.core.content.FileProvider
+import android.content.Intent
+import android.os.Environment
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.sp
+import android.util.Log
+import android.widget.Toast
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,38 +54,18 @@ fun SalesReportPage(
     var mode by remember { mutableStateOf(ReportModeSR.Daily) }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var isGeneratingPdf by remember { mutableStateOf(false) }
+    var isGeneratingExcel by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()) }
     val monthFormat = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
     val monthKeyFormat = remember { SimpleDateFormat("yyyy-MM", Locale.getDefault()) }
     val dateState = rememberDatePickerState(initialSelectedDateMillis = selectedTime)
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // Agregasi data tabel sesuai mode dan tanggal terpilih
     val rows: List<List<String>> by remember(viewModel.transactions, selectedTime, mode) {
         mutableStateOf(buildRows(viewModel, selectedTime, mode))
-    }
-
-    // Export: CreateDocument launcher (CSV & PDF)
-    var pendingCsv by remember { mutableStateOf<String?>(null) }
-    val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri: Uri? ->
-        val csv = pendingCsv
-        if (uri != null && csv != null) {
-            context.contentResolver.openOutputStream(uri)?.use { os ->
-                os.write(csv.toByteArray())
-            }
-        }
-        pendingCsv = null
-    }
-
-    var pendingPdf by remember { mutableStateOf<List<List<String>>?>(null) }
-    val pdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri: Uri? ->
-        val data = pendingPdf
-        if (uri != null && data != null) {
-            context.contentResolver.openOutputStream(uri)?.use { os ->
-                writeSimplePdf(os, title = "Laporan Penjualan", subtitle = sdf.format(Date(selectedTime)), table = data)
-            }
-        }
-        pendingPdf = null
     }
 
     Scaffold(
@@ -312,9 +300,63 @@ fun SalesReportPage(
                         ) {
                             Button(
                                 onClick = {
-                                    pendingPdf = rows
-                                    pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
+                                    Toast.makeText(context, "Membuat PDF...", Toast.LENGTH_SHORT).show()
+                                    Log.d("SalesReport", "PDF button clicked")
+                                    
+                                    scope.launch {
+                                        try {
+                                            isGeneratingPdf = true
+                                            
+                                            withContext(Dispatchers.IO) {
+                                                // Generate PDF langsung dengan format tanggal yang aman
+                                                val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                                                val fileName = "Laporan_${dateFormat.format(Date(selectedTime))}.pdf"
+                                                val pdfFile = File(context.cacheDir, fileName)
+                                                
+                                                Log.d("SalesReport", "Creating PDF file: ${pdfFile.absolutePath}")
+                                                
+                                                FileOutputStream(pdfFile).use { os ->
+                                                    writeSimplePdf(
+                                                        os,
+                                                        title = "Laporan Penjualan",
+                                                        subtitle = sdf.format(Date(selectedTime)),
+                                                        table = rows
+                                                    )
+                                                }
+                                                
+                                                Log.d("SalesReport", "PDF created successfully, size: ${pdfFile.length()}")
+                                                
+                                                // Save ke Downloads
+                                                val saved = saveReportToDownloads(context, pdfFile, "application/pdf")
+                                                Log.d("SalesReport", "Save to downloads: $saved")
+                                                
+                                                withContext(Dispatchers.Main) {
+                                                    if (saved) {
+                                                        // Tampilkan notifikasi
+                                                        NotificationHelper.showReportPdfNotification(context)
+                                                        Toast.makeText(context, "PDF berhasil disimpan ke Downloads", Toast.LENGTH_SHORT).show()
+                                                    } else {
+                                                        Toast.makeText(context, "Gagal menyimpan PDF", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                    
+                                                    // Share langsung
+                                                    shareReportFile(context, pdfFile, "application/pdf", "Bagikan Laporan PDF")
+                                                    Log.d("SalesReport", "Share intent launched")
+                                                }
+                                            }
+                                            
+                                        } catch (e: Exception) {
+                                            Log.e("SalesReport", "Error creating/sharing PDF", e)
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                            e.printStackTrace()
+                                        } finally {
+                                            isGeneratingPdf = false
+                                        }
+                                    }
                                 },
+                                enabled = !isGeneratingPdf && !isGeneratingExcel,
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(18.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -327,15 +369,67 @@ fun SalesReportPage(
                                     contentDescription = null
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("PDF", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    if (isGeneratingPdf) "Membuat..." else "PDF",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
 
                             Button(
                                 onClick = {
-                                    val csv = buildCsv(rows)
-                                    pendingCsv = csv
-                                    csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
+                                    Toast.makeText(context, "Membuat Excel...", Toast.LENGTH_SHORT).show()
+                                    Log.d("SalesReport", "Excel button clicked")
+                                    
+                                    scope.launch {
+                                        try {
+                                            isGeneratingExcel = true
+                                            
+                                            withContext(Dispatchers.IO) {
+                                                // Generate CSV langsung dengan format tanggal yang aman
+                                                val csv = buildCsv(rows)
+                                                val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                                                val fileName = "Laporan_${dateFormat.format(Date(selectedTime))}.csv"
+                                                val csvFile = File(context.cacheDir, fileName)
+                                                
+                                                Log.d("SalesReport", "Creating CSV file: ${csvFile.absolutePath}")
+                                                
+                                                FileOutputStream(csvFile).use { os ->
+                                                    os.write(csv.toByteArray())
+                                                }
+                                                
+                                                Log.d("SalesReport", "CSV created successfully, size: ${csvFile.length()}")
+                                                
+                                                // Save ke Downloads
+                                                val saved = saveReportToDownloads(context, csvFile, "text/csv")
+                                                Log.d("SalesReport", "Save to downloads: $saved")
+                                                
+                                                withContext(Dispatchers.Main) {
+                                                    if (saved) {
+                                                        // Tampilkan notifikasi
+                                                        NotificationHelper.showReportExcelNotification(context)
+                                                        Toast.makeText(context, "Excel berhasil disimpan ke Downloads", Toast.LENGTH_SHORT).show()
+                                                    } else {
+                                                        Toast.makeText(context, "Gagal menyimpan Excel", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                    
+                                                    // Share langsung
+                                                    shareReportFile(context, csvFile, "text/csv", "Bagikan Laporan Excel")
+                                                    Log.d("SalesReport", "Share intent launched")
+                                                }
+                                            }
+                                            
+                                        } catch (e: Exception) {
+                                            Log.e("SalesReport", "Error creating/sharing CSV", e)
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                            e.printStackTrace()
+                                        } finally {
+                                            isGeneratingExcel = false
+                                        }
+                                    }
                                 },
+                                enabled = !isGeneratingPdf && !isGeneratingExcel,
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(18.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -348,7 +442,10 @@ fun SalesReportPage(
                                     contentDescription = null
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Excel", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    if (isGeneratingExcel) "Membuat..." else "Excel",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
                         }
                     }
@@ -480,7 +577,7 @@ private fun buildCsv(rows: List<List<String>>): String {
     return sb.toString()
 }
 
-private fun writeSimplePdf(os: OutputStream, title: String, subtitle: String, table: List<List<String>>) {
+private fun writeSimplePdf(os: java.io.OutputStream, title: String, subtitle: String, table: List<List<String>>) {
     val doc = PdfDocument()
     val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 approx
     val page = doc.startPage(pageInfo)
@@ -508,6 +605,86 @@ private fun writeSimplePdf(os: OutputStream, title: String, subtitle: String, ta
     doc.finishPage(page)
     doc.writeTo(os)
     doc.close()
+}
+
+/**
+ * Simpan file ke folder Downloads
+ */
+private fun saveReportToDownloads(context: Context, sourceFile: File, mimeType: String): Boolean {
+    return try {
+        Log.d("SalesReport", "Attempting to save file: ${sourceFile.name}, mimeType: $mimeType")
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // Android 10+ menggunakan MediaStore
+            val contentValues = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, sourceFile.name)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            
+            val resolver = context.contentResolver
+            val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            
+            Log.d("SalesReport", "MediaStore URI: $uri")
+            
+            uri?.let {
+                resolver.openOutputStream(it)?.use { outputStream ->
+                    sourceFile.inputStream().use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                Log.d("SalesReport", "File saved to Downloads successfully")
+                true
+            } ?: run {
+                Log.e("SalesReport", "Failed to create MediaStore URI")
+                false
+            }
+        } else {
+            // Android 9 dan ke bawah
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+            val destFile = File(downloadsDir, sourceFile.name)
+            sourceFile.copyTo(destFile, overwrite = true)
+            Log.d("SalesReport", "File saved to: ${destFile.absolutePath}")
+            true
+        }
+    } catch (e: Exception) {
+        Log.e("SalesReport", "Error saving file to Downloads", e)
+        e.printStackTrace()
+        false
+    }
+}
+
+/**
+ * Share file via Intent
+ */
+private fun shareReportFile(context: Context, file: File, mimeType: String, title: String) {
+    try {
+        Log.d("SalesReport", "Attempting to share file: ${file.absolutePath}")
+        
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        
+        Log.d("SalesReport", "FileProvider URI: $uri")
+        
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        context.startActivity(Intent.createChooser(shareIntent, title))
+        Log.d("SalesReport", "Share intent started successfully")
+        
+    } catch (e: Exception) {
+        Log.e("SalesReport", "Error sharing file", e)
+        e.printStackTrace()
+    }
 }
 
 @Composable

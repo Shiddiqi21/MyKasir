@@ -11,7 +11,7 @@ object RetrofitClient {
     // Ganti dengan IP lokal kamu (cek dengan ipconfig di CMD)
     // Untuk emulator Android Studio, gunakan 10.0.2.2
     // Untuk device fisik, gunakan IP komputer kamu di jaringan yang sama
-    private const val BASE_URL = "http://10.0.2.2:3000/"
+    private const val BASE_URL = "http://192.168.1.123:3000/"
     
     // Alternative URLs (uncomment yang sesuai):
     // private const val BASE_URL = "http://192.168.1.X:3000/" // Ganti X dengan IP komputer kamu

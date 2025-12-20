@@ -31,6 +31,16 @@ interface ApiService {
         @Header("Authorization") token: String
     ): ApiResponse<UserData>
 
+    @FormUrlEncoded
+    @PUT("api/auth/profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Field("name") name: String? = null,
+        @Field("storeName") storeName: String? = null,
+        @Field("oldPassword") oldPassword: String? = null,
+        @Field("newPassword") newPassword: String? = null
+    ): ApiResponse<UserData>
+
     // ==================== PRODUCTS ====================
     @GET("api/products")
     suspend fun getAllProducts(

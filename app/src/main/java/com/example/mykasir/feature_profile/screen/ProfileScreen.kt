@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +37,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +60,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mykasir.feature_profile.viewmodel.ProfileUiState
 import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
+import com.example.mykasir.feature_profile.viewmodel.UpdateProfileState
+import android.widget.Toast
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ProfileScreen(
@@ -65,7 +78,10 @@ fun ProfileScreen(
     onManageCollaborators: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     var visible by remember { mutableStateOf(false) }
     
@@ -76,6 +92,22 @@ fun ProfileScreen(
     LaunchedEffect(uiState) {
         if (uiState is ProfileUiState.LoggedOut) {
             onLogout()
+        }
+    }
+    
+    // Handle update state
+    LaunchedEffect(updateState) {
+        when (updateState) {
+            is UpdateProfileState.Success -> {
+                Toast.makeText(context, (updateState as UpdateProfileState.Success).message, Toast.LENGTH_SHORT).show()
+                showEditDialog = false
+                viewModel.resetUpdateState()
+            }
+            is UpdateProfileState.Error -> {
+                Toast.makeText(context, (updateState as UpdateProfileState.Error).message, Toast.LENGTH_LONG).show()
+                viewModel.resetUpdateState()
+            }
+            else -> {}
         }
     }
     
@@ -119,6 +151,23 @@ fun ProfileScreen(
                     Text("Batal")
                 }
             }
+        )
+    }
+    
+    // Edit profile dialog (hanya untuk owner)
+    if (showEditDialog && uiState is ProfileUiState.Success) {
+        EditProfileDialog(
+            profile = (uiState as ProfileUiState.Success).profile,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { name, storeName, oldPassword, newPassword ->
+                viewModel.updateProfile(
+                    name = name,
+                    storeName = storeName,
+                    oldPassword = oldPassword,
+                    newPassword = newPassword
+                )
+            },
+            isLoading = updateState is UpdateProfileState.Loading
         )
     }
     
@@ -304,6 +353,33 @@ fun ProfileScreen(
                                 iconColor = MaterialTheme.colorScheme.tertiary
                             )
                             
+                            // Edit Profile button (only for owners)
+                            if (profile.isOwner) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                OutlinedButton(
+                                    onClick = { showEditDialog = true },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Edit Profil",
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            
                             // Manage Collaborators button (only for owners)
                             if (profile.isOwner) {
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -428,3 +504,217 @@ private fun ProfileInfoCard(
     }
 }
 
+@Composable
+private fun EditProfileDialog(
+    profile: com.example.mykasir.feature_profile.viewmodel.ProfileData,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String?, storeName: String?, oldPassword: String?, newPassword: String?) -> Unit,
+    isLoading: Boolean
+) {
+    var name by remember { mutableStateOf(profile.name) }
+    var storeName by remember { mutableStateOf(profile.storeName) }
+    var oldPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var showOldPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
+    
+    var nameError by remember { mutableStateOf(false) }
+    var storeNameError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    
+    AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = {
+            Text(
+                text = "Edit Profil",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Nama Pemilik
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        nameError = it.isBlank()
+                    },
+                    label = { Text("Nama Pemilik") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = nameError,
+                    supportingText = if (nameError) {
+                        { Text("Nama tidak boleh kosong") }
+                    } else null,
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                // Nama Toko
+                OutlinedTextField(
+                    value = storeName,
+                    onValueChange = {
+                        storeName = it
+                        storeNameError = it.isBlank()
+                    },
+                    label = { Text("Nama Toko") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = storeNameError,
+                    supportingText = if (storeNameError) {
+                        { Text("Nama toko tidak boleh kosong") }
+                    } else null,
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Ganti Password (Opsional)",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "Kosongkan jika tidak ingin mengganti password",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                
+                // Password Lama
+                OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = {
+                        oldPassword = it
+                        passwordError = null
+                    },
+                    label = { Text("Password Lama") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = if (showOldPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        IconButton(onClick = { showOldPassword = !showOldPassword }) {
+                            Icon(
+                                imageVector = if (showOldPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = if (showOldPassword) "Sembunyikan password" else "Tampilkan password"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                // Password Baru
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = {
+                        newPassword = it
+                        passwordError = null
+                    },
+                    label = { Text("Password Baru") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = if (showNewPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                            Icon(
+                                imageVector = if (showNewPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = if (showNewPassword) "Sembunyikan password" else "Tampilkan password"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                // Konfirmasi Password Baru
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        passwordError = null
+                    },
+                    label = { Text("Konfirmasi Password Baru") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    isError = passwordError != null,
+                    supportingText = passwordError?.let { { Text(it) } },
+                    trailingIcon = {
+                        IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
+                            Icon(
+                                imageVector = if (showConfirmPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = if (showConfirmPassword) "Sembunyikan password" else "Tampilkan password"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    // Validasi
+                    nameError = name.isBlank()
+                    storeNameError = storeName.isBlank()
+                    
+                    // Validasi password jika diisi
+                    if (newPassword.isNotEmpty() || oldPassword.isNotEmpty()) {
+                        when {
+                            oldPassword.isBlank() -> {
+                                passwordError = "Password lama harus diisi"
+                                return@Button
+                            }
+                            newPassword.isBlank() -> {
+                                passwordError = "Password baru harus diisi"
+                                return@Button
+                            }
+                            newPassword.length < 6 -> {
+                                passwordError = "Password minimal 6 karakter"
+                                return@Button
+                            }
+                            newPassword != confirmPassword -> {
+                                passwordError = "Konfirmasi password tidak cocok"
+                                return@Button
+                            }
+                        }
+                    }
+                    
+                    if (!nameError && !storeNameError && passwordError == null) {
+                        val finalName = if (name != profile.name) name else null
+                        val finalStoreName = if (storeName != profile.storeName) storeName else null
+                        val finalOldPassword = if (newPassword.isNotEmpty()) oldPassword else null
+                        val finalNewPassword = if (newPassword.isNotEmpty()) newPassword else null
+                        
+                        onConfirm(finalName, finalStoreName, finalOldPassword, finalNewPassword)
+                    }
+                },
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    Text("Menyimpan...")
+                } else {
+                    Text("Simpan")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("Batal")
+            }
+        }
+    )
+}

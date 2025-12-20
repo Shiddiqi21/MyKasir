@@ -34,6 +34,24 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun login(email: String, password: String) {
         Log.d("LoginViewModel", "Attempting login for: $email")
+        
+        // Trim whitespace dari input
+        val trimmedEmail = email.trim()
+        
+        // Validasi input sebelum melakukan request
+        if (trimmedEmail.isBlank() || password.isBlank()) {
+            _uiState.value = LoginUiState.Error("Email dan password harus diisi")
+            return
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+            _uiState.value = LoginUiState.Error("Format email tidak valid")
+            return
+        }
+        if (password.length < 8) {
+            _uiState.value = LoginUiState.Error("Password minimal 8 karakter")
+            return
+        }
+
         _uiState.value = LoginUiState.Loading
 
         viewModelScope.launch {
@@ -41,7 +59,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 Log.d("LoginViewModel", "Calling API...")
                 // Memanggil API dengan parameter FormUrlEncoded
                 val response = apiService.login(
-                    email = email,
+                    email = trimmedEmail.lowercase(),
                     password = password
                 )
 

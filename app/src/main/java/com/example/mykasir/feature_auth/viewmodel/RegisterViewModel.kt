@@ -31,19 +31,23 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
     fun register(email: String, password: String, name: String, storeName: String = "") {
         Log.d("RegisterViewModel", "Attempting register for: $email")
         
+        // Trim whitespace dari input
+        val trimmedEmail = email.trim()
+        val trimmedName = name.trim()
+        
         // Validasi input
-        if (email.isBlank() || password.isBlank() || name.isBlank()) {
+        if (trimmedEmail.isBlank() || password.isBlank() || trimmedName.isBlank()) {
             _uiState.value = RegisterUiState.Error("Semua field harus diisi")
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
             _uiState.value = RegisterUiState.Error("Format email tidak valid")
             return
         }
 
-        if (password.length < 4) {
-            _uiState.value = RegisterUiState.Error("Password minimal 4 karakter")
+        if (password.length < 8) {
+            _uiState.value = RegisterUiState.Error("Password minimal 8 karakter")
             return
         }
 
@@ -53,10 +57,10 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
             try {
                 Log.d("RegisterViewModel", "Calling register API...")
                 val response = apiService.register(
-                    email = email,
+                    email = trimmedEmail.lowercase(),
                     password = password,
-                    name = name,
-                    storeName = storeName.ifBlank { "Toko $name" }
+                    name = trimmedName,
+                    storeName = storeName.ifBlank { "Toko $trimmedName" }
                 )
 
                 Log.d("RegisterViewModel", "Register success: ${response.status}")
