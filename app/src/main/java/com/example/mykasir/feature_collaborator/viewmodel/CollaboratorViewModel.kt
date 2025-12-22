@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mykasir.core_data.local.TokenManager
 import com.example.mykasir.core_data.remote.RetrofitClient
+import com.example.mykasir.core_ui.NotificationHelper
 import com.example.mykasir.feature_collaborator.model.Collaborator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,6 +104,8 @@ class CollaboratorViewModel(application: Application) : AndroidViewModel(applica
                 
                 if (response.status == "success") {
                     _addState.value = AddCollaboratorState.Success
+                    // Tampilkan notifikasi kasir baru ditambahkan
+                    NotificationHelper.showNewCashierNotification(getApplication(), name)
                     loadCollaborators() // Refresh list
                 } else {
                     _addState.value = AddCollaboratorState.Error(response.message ?: "Gagal menambah kasir")

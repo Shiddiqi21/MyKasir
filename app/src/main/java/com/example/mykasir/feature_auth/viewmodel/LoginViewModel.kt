@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mykasir.core_data.local.TokenManager
+import com.example.mykasir.core_ui.NotificationHelper
 import com.example.mykasir.core_data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +61,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         storeName = data.storeName ?: ""
                     )
                     Log.d("LoginViewModel", "Token saved successfully. Role: ${data.role}")
+
+                    // Tampilkan notifikasi selamat datang
+                    NotificationHelper.showWelcomeNotification(getApplication(), data.name)
 
                     _uiState.value = LoginUiState.Success(data.token, data.email, data.role)
                 } else {

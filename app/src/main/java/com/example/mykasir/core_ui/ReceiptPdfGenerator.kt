@@ -175,19 +175,33 @@ object ReceiptPdfGenerator {
      * Share PDF via Intent
      */
     fun sharePdf(context: Context, file: File) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            
+            val chooserIntent = Intent.createChooser(shareIntent, "Bagikan Struk").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            
+            context.startActivity(chooserIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            android.widget.Toast.makeText(
+                context,
+                "Gagal membuka share dialog: ${e.message}",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
-        
-        context.startActivity(Intent.createChooser(shareIntent, "Bagikan Struk"))
     }
     
     /**
@@ -239,5 +253,132 @@ object ReceiptPdfGenerator {
     private fun formatRupiahSimple(amount: Int): String {
         val formatter = java.text.NumberFormat.getNumberInstance(Locale("in", "ID"))
         return "Rp${formatter.format(amount)}"
+    }
+    
+    /**
+     * Generate PDF laporan penjualan
+     */
+    fun generateReport(
+        context: Context,
+        title: String,
+        subtitle: String,
+        table: List<List<String>>,
+        totalTransactions: Int,
+        grandTotal: Int
+    ): File? {
+        val pdfDocument = PdfDocument()
+        // A4 size approximately
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        
+        var y = 40f
+        
+        // Paints
+        val titlePaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        
+        val subtitlePaint = Paint().apply {
+            color = Color.DKGRAY
+            textSize = 14f
+            isAntiAlias = true
+        }
+        
+        val headerPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 12f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        
+        val normalPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 11f
+            isAntiAlias = true
+        }
+        
+        val linePaint = Paint().apply {
+            color = Color.GRAY
+            strokeWidth = 1f
+        }
+        
+        // Title
+        canvas.drawText(title, 40f, y, titlePaint)
+        y += 24f
+        
+        // Subtitle (tanggal)
+        canvas.drawText(subtitle, 40f, y, subtitlePaint)
+        y += 30f
+        
+        // Header line
+        canvas.drawLine(40f, y, 555f, y, linePaint)
+        y += 20f
+        
+        // Table header
+        val headers = listOf("Tanggal", "Produk", "Qty", "Harga", "Subtotal")
+        val colWidths = floatArrayOf(90f, 180f, 50f, 90f, 100f)
+        var x = 40f
+        headers.forEachIndexed { i, h ->
+            canvas.drawText(h, x, y, headerPaint)
+            x += colWidths[i]
+        }
+        y += 18f
+        
+        // Header separator
+        canvas.drawLine(40f, y, 555f, y, linePaint)
+        y += 12f
+        
+        // Table rows
+        table.forEachIndexed { index, row ->
+            if (y > 780f) return@forEachIndexed // Simple pagination - skip if too long
+            
+            x = 40f
+            row.forEachIndexed { i, value ->
+                // Format angka untuk kolom Harga dan Subtotal
+                val displayValue = when (i) {
+                    3, 4 -> { // Harga dan Subtotal
+                        val num = value.toIntOrNull()
+                        if (num != null) formatRupiahSimple(num) else value
+                    }
+                    else -> value
+                }
+                canvas.drawText(displayValue, x, y, normalPaint)
+                x += colWidths.getOrElse(i) { 80f }
+            }
+            y += 16f
+        }
+        
+        y += 10f
+        
+        // Footer line
+        canvas.drawLine(40f, y, 555f, y, linePaint)
+        y += 25f
+        
+        // Summary
+        canvas.drawText("Jumlah Transaksi: $totalTransactions", 40f, y, normalPaint)
+        y += 18f
+        canvas.drawText("Total: ${formatRupiahSimple(grandTotal)}", 40f, y, headerPaint)
+        
+        pdfDocument.finishPage(page)
+        
+        // Save to file
+        val fileName = "laporan_${System.currentTimeMillis()}.pdf"
+        val file = File(context.cacheDir, fileName)
+        
+        return try {
+            FileOutputStream(file).use { out ->
+                pdfDocument.writeTo(out)
+            }
+            pdfDocument.close()
+            file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            pdfDocument.close()
+            null
+        }
     }
 }

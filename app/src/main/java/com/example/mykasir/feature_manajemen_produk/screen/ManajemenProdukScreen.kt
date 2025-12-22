@@ -342,161 +342,29 @@ fun ManajemenProdukScreen(navController: NavController, viewModel: ProductViewMo
             }
         }
 
-        // Konfirmasi hapus produk (popup modern)
+        // Konfirmasi hapus produk
         val pending = productToDelete
         if (pending != null) {
-            AlertDialog(
-                onDismissRequest = { productToDelete = null },
-                shape = RoundedCornerShape(24.dp),
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp,
-                title = {
-                    // Kita akan bungkus konten di dalam Surface bercorak
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFFFDFBFF)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
-                                .padding(horizontal = 20.dp, vertical = 20.dp)
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                // Aksen garis kecil di atas
-                                Box(
-                                    modifier = Modifier
-                                        .width(42.dp)
-                                        .height(3.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
-                                            shape = RoundedCornerShape(50)
-                                        )
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .background(
-                                            brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-                                                    Color.Transparent
-                                                )
-                                            ),
-                                            shape = RoundedCornerShape(20.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = Color.White.copy(alpha = 0.9f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.padding(10.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Warning,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(
-                                    text = "Yakin hapus produk ini?",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = pending.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                Text(
-                                    text = "Akan dihapus dari daftar stok.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                Text(
-                                    text = "Tindakan ini tidak dapat dibatalkan.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.9f)
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    OutlinedButton(
-                                        onClick = { productToDelete = null },
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(50)
-                                    ) {
-                                        Text("Batal")
-                                    }
-                                    Button(
-                                        onClick = {
-                                            viewModel.deleteProduct(
-                                                pending,
-                                                onSuccess = {
-                                                    notifier?.show("Produk dihapus", NotificationType.Success, 1500)
-                                                    productToDelete = null
-                                                },
-                                                onError = { error ->
-                                                    notifier?.show(error, NotificationType.Error, 2000)
-                                                    productToDelete = null
-                                                }
-                                            )
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError
-                                        ),
-                                        shape = RoundedCornerShape(50)
-                                    ) {
-                                        Text("Ya, hapus")
-                                    }
-                                }
-                            }
+            com.example.mykasir.core_ui.ConfirmationDialog(
+                title = "Hapus Produk",
+                message = "Yakin ingin menghapus ${pending.name}? Tindakan ini tidak dapat dibatalkan.",
+                confirmText = "Ya, Hapus",
+                dismissText = "Batal",
+                type = com.example.mykasir.core_ui.DialogType.Delete,
+                onConfirm = {
+                    viewModel.deleteProduct(
+                        pending,
+                        onSuccess = {
+                            notifier?.show("Produk dihapus", NotificationType.Success, 1500)
+                            productToDelete = null
+                        },
+                        onError = { error ->
+                            notifier?.show(error, NotificationType.Error, 2000)
+                            productToDelete = null
                         }
-                    }
+                    )
                 },
-                text = {},
-                confirmButton = {},
-                dismissButton = {}
+                onDismiss = { productToDelete = null }
             )
         }
     }   

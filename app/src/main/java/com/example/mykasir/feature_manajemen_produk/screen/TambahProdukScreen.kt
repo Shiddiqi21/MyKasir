@@ -185,49 +185,62 @@ fun TambahProdukScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Tombol Simpan
                 Button(
                     onClick = {
-                        if (nama.isNotBlank() && harga.isNotBlank()) {
-                            if (isEditMode) {
-                                val updatedProduct = productToEdit!!.copy(
-                                    name = nama,
-                                    category = kategori,
-                                    price = harga.toIntOrNull() ?: 0,
-                                    stock = stokAwal.toIntOrNull() ?: 0,
-                                    minStock = minStok.toIntOrNull() ?: 0,
-                                    imageUri = selectedImageUri?.toString()
-                                )
-                                viewModel.updateProduct(
-                                    updatedProduct,
-                                    onSuccess = {
-                                        notifier?.show("Produk berhasil diperbarui", NotificationType.Success, 1800)
-                                        navController.popBackStack()
-                                    },
-                                    onError = { error ->
-                                        notifier?.show(error, NotificationType.Error, 2000)
-                                    }
-                                )
-                            } else {
-                                val newProduct = Product(
-                                    id = System.currentTimeMillis(),
-                                    name = nama,
-                                    category = kategori,
-                                    price = harga.toIntOrNull() ?: 0,
-                                    stock = stokAwal.toIntOrNull() ?: 0,
-                                    minStock = minStok.toIntOrNull() ?: 0,
-                                    imageUri = selectedImageUri?.toString()
-                                )
-                                viewModel.addProduct(
-                                    newProduct,
-                                    onSuccess = {
-                                        notifier?.show("Produk berhasil disimpan", NotificationType.Success, 1800)
-                                        navController.popBackStack()
-                                    },
-                                    onError = { error ->
-                                        notifier?.show(error, NotificationType.Error, 2000)
-                                    }
-                                )
+                        val stokAwalInt = stokAwal.toIntOrNull() ?: 0
+                        val minStokInt = minStok.toIntOrNull() ?: 0
+                        
+                        when {
+                            nama.isBlank() -> {
+                                notifier?.show("Nama produk harus diisi", NotificationType.Error, 2000)
+                            }
+                            harga.isBlank() -> {
+                                notifier?.show("Harga produk harus diisi", NotificationType.Error, 2000)
+                            }
+                            stokAwalInt < minStokInt -> {
+                                notifier?.show("Stok awal tidak boleh lebih kecil dari stok minimum", NotificationType.Error, 2500)
+                            }
+                            else -> {
+                                if (isEditMode) {
+                                    val updatedProduct = productToEdit!!.copy(
+                                        name = nama,
+                                        category = kategori,
+                                        price = harga.toIntOrNull() ?: 0,
+                                        stock = stokAwalInt,
+                                        minStock = minStokInt,
+                                        imageUri = selectedImageUri?.toString()
+                                    )
+                                    viewModel.updateProduct(
+                                        updatedProduct,
+                                        onSuccess = {
+                                            notifier?.show("Produk berhasil diperbarui", NotificationType.Success, 1800)
+                                            navController.popBackStack()
+                                        },
+                                        onError = { error ->
+                                            notifier?.show(error, NotificationType.Error, 2000)
+                                        }
+                                    )
+                                } else {
+                                    val newProduct = Product(
+                                        id = System.currentTimeMillis(),
+                                        name = nama,
+                                        category = kategori,
+                                        price = harga.toIntOrNull() ?: 0,
+                                        stock = stokAwalInt,
+                                        minStock = minStokInt,
+                                        imageUri = selectedImageUri?.toString()
+                                    )
+                                    viewModel.addProduct(
+                                        newProduct,
+                                        onSuccess = {
+                                            notifier?.show("Produk berhasil disimpan", NotificationType.Success, 1800)
+                                            navController.popBackStack()
+                                        },
+                                        onError = { error ->
+                                            notifier?.show(error, NotificationType.Error, 2000)
+                                        }
+                                    )
+                                }
                             }
                         }
                     },

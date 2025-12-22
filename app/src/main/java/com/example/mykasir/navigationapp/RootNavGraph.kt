@@ -1,11 +1,18 @@
 package com.example.mykasir.navigationapp
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.example.mykasir.core_data.local.TokenManager
 import com.example.mykasir.feature_auth.screen.LoginScreen
 import com.example.mykasir.feature_auth.screen.RegisterScreen
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
@@ -21,11 +28,27 @@ object Graph {
 @Composable
 fun RootNavGraph() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    
+    // Check if user is already logged in
+    var startDestination by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(Unit) {
+        startDestination = if (tokenManager.isLoggedIn()) {
+            Graph.MAIN  // Skip to main if already logged in
+        } else {
+            "landing"   // Go to landing/auth if not logged in
+        }
+    }
+    
+    // Wait until we determine the start destination
+    if (startDestination == null) return
 
     NavHost(
         navController = navController,
         route = Graph.ROOT,
-        startDestination = "landing" // Mulai dari Landing terlebih dahulu
+        startDestination = startDestination!!
     ) {
         // Landing Screen
         composable(route = "landing") {

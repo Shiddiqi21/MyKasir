@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.mykasir.core_data.local.TokenManager
 import com.example.mykasir.core_data.remote.RetrofitClient
 import com.example.mykasir.core_data.remote.UserData
+import com.example.mykasir.core_ui.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -117,6 +118,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                         name
                     )
                     _updateState.value = UpdateProfileState.Success
+                    // Tampilkan notifikasi profil diperbarui
+                    NotificationHelper.showProfileUpdatedNotification(getApplication())
                     // Reload profile untuk update UI
                     loadProfile()
                 } else {
@@ -165,9 +168,11 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val name = tokenManager.getUserName()
         val id = tokenManager.getUserId()
         val role = tokenManager.getUserRole()
+        val storeId = tokenManager.getStoreId()
+        val storeName = tokenManager.getStoreName()
 
-        return if (email != null && name != null && id != null && role != null) {
-            UserData(id, email, name, role)
+        return if (email != null && name != null && id != null && role != null && storeId != null) {
+            UserData(id, email, name, role, storeId, storeName)
         } else {
             null
         }

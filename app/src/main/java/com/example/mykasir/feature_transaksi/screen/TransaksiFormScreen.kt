@@ -183,14 +183,22 @@ fun TransaksiFormScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(list) { p ->
+                        // Hitung stok tersedia = stok asli - jumlah di keranjang
+                        val inCart = viewModel.currentItems
+                            .filter { it.productName.equals(p.name, ignoreCase = true) }
+                            .sumOf { it.quantity }
+                        val availableStock = (p.stock - inCart).coerceAtLeast(0)
+                        
                         ProductGridItem(
                             name = p.name,
                             price = p.price,
-                            stock = p.stock,
+                            stock = availableStock,
                             imageUri = p.imageUri,
                             onAdd = {
-                                viewModel.addOrIncreaseItem(p.name, p.price, p.stock)
-                                notifier?.show("Produk ditambahkan ke keranjang", NotificationType.Success, 1500)
+                                if (availableStock > 0) {
+                                    viewModel.addOrIncreaseItem(p.name, p.price, p.stock)
+                                    notifier?.show("Produk ditambahkan ke keranjang", NotificationType.Success, 1500)
+                                }
                             }
                         )
                     }
@@ -199,66 +207,34 @@ fun TransaksiFormScreen(
         }
 
         if (showCustomerDialog) {
-            AlertDialog(
-                    onDismissRequest = { showCustomerDialog = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                val name = customerNameInput.trim()
-                                if (name.isNotEmpty()) {
-                                    // Save transaction via API
-                                    viewModel.saveTransaction(
-                                        name,
-                                        onSuccess = { customerId ->
-                                            viewModel.resetForm()
-                                            showCustomerDialog = false
-                                            notifier?.show("Transaksi berhasil disimpan", NotificationType.Success, 2000)
-                                            onSaved(customerId)
-                                            // Reload products untuk update stok
-                                            productViewModel.loadProducts()
-                                        },
-                                        onError = { error ->
-                                            notifier?.show(error, NotificationType.Error, 2500)
-                                        }
-                                    )
-                                }
+            com.example.mykasir.core_ui.InputDialog(
+                title = "Nama Pelanggan",
+                placeholder = "Masukkan nama pelanggan",
+                value = customerNameInput,
+                onValueChange = { customerNameInput = it },
+                confirmText = "Simpan",
+                dismissText = "Batal",
+                onConfirm = {
+                    val name = customerNameInput.trim()
+                    if (name.isNotEmpty()) {
+                        viewModel.saveTransaction(
+                            name,
+                            onSuccess = { customerId ->
+                                viewModel.resetForm()
+                                showCustomerDialog = false
+                                notifier?.show("Transaksi berhasil disimpan", NotificationType.Success, 2000)
+                                onSaved(customerId)
+                                productViewModel.loadProducts()
+                            },
+                            onError = { error ->
+                                notifier?.show(error, NotificationType.Error, 2500)
                             }
-                        ) {
-                            Text(
-                                "Simpan",
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showCustomerDialog = false }) {
-                            Text("Batal", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    title = {
-                        Text(
-                            "Nama Pelanggan",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
                         )
-                    },
-                    text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = customerNameInput,
-                                onValueChange = { customerNameInput = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                placeholder = { Text("Masukkan nama pelanggan") }
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(24.dp),
-                    containerColor = Color.White,
-                    tonalElevation = 8.dp
-                )
-            }
+                    }
+                },
+                onDismiss = { showCustomerDialog = false }
+            )
+        }
 
         if (showCartSheet) {
             ModalBottomSheet(
@@ -396,51 +372,17 @@ fun TransaksiFormScreen(
         // Dialog konfirmasi hapus item dari keranjang
         val pendingToDelete = itemToDelete
         if (pendingToDelete != null) {
-            AlertDialog(
-                onDismissRequest = { itemToDelete = null },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.removeItem(pendingToDelete)
-                            itemToDelete = null
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Hapus", fontWeight = FontWeight.SemiBold)
-                    }
+            com.example.mykasir.core_ui.ConfirmationDialog(
+                title = "Hapus dari Keranjang",
+                message = "Yakin ingin menghapus ${pendingToDelete.productName} dari keranjang?",
+                confirmText = "Hapus",
+                dismissText = "Batal",
+                type = com.example.mykasir.core_ui.DialogType.Delete,
+                onConfirm = {
+                    viewModel.removeItem(pendingToDelete)
+                    itemToDelete = null
                 },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = { itemToDelete = null },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Batal")
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Hapus dari keranjang",
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Yakin ingin menghapus ${pendingToDelete.productName} dari keranjang?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
-                },
-                shape = RoundedCornerShape(24.dp),
-                containerColor = Color.White,
-                tonalElevation = 0.dp
+                onDismiss = { itemToDelete = null }
             )
         }
     }

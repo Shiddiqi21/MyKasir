@@ -66,7 +66,6 @@ fun ChartPage(
                         Text(
                             text = "Grafik Penjualan",
                             color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
@@ -91,7 +90,8 @@ fun ChartPage(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
             )
         },
         containerColor = MaterialTheme.colorScheme.primary
@@ -151,7 +151,7 @@ fun ChartPage(
                             ) { mode = ReportModeSR.Monthly }
                         }
 
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
                                 style = MaterialTheme.typography.labelSmall,
@@ -164,23 +164,33 @@ fun ChartPage(
                                 monthFormat.format(Date(selectedTime))
                             }
 
-                            androidx.compose.material3.OutlinedTextField(
-                                value = displayDate,
-                                onValueChange = {},
-                                readOnly = true,
-                                trailingIcon = {
-                                    IconButton(onClick = { showDatePicker = true }) {
-                                        Icon(
-                                            imageVector = Icons.Filled.CalendarMonth,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { showDatePicker = true },
-                                shape = RoundedCornerShape(14.dp)
-                            )
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = displayDate,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Icon(
+                                        Icons.Filled.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
                 }

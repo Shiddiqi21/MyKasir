@@ -25,7 +25,8 @@ import com.example.mykasir.feature_manajemen_produk.model.Product
 @Composable
 fun StokTipisScreen(navController: NavController, viewModel: ProductViewModel) {
     val notifier = LocalNotifier.current
-    val lowStockProducts = viewModel.products.filter { it.stock < it.minStock }
+    // Filter produk dengan stok <= minimum (termasuk stok habis)
+    val lowStockProducts = viewModel.products.filter { it.stock <= it.minStock }
 
     var showUpdateDialog by remember { mutableStateOf(false) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }

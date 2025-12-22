@@ -1,5 +1,6 @@
 package com.example.mykasir.core_data.remote
 
+import com.example.mykasir.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -8,17 +9,25 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Ganti dengan IP lokal kamu (cek dengan ipconfig di CMD)
-    // Untuk emulator Android Studio, gunakan 10.0.2.2
-    // Untuk device fisik, gunakan IP komputer kamu di jaringan yang sama
-    private const val BASE_URL = "http://192.168.1.85:3000/"
+    // URL Configuration
+    // Development: emulator localhost
+    private const val DEV_BASE_URL = "http://10.0.2.2:3000/"
     
-    // Alternative URLs (uncomment yang sesuai):
-    // private const val BASE_URL = "http://192.168.1.X:3000/" // Ganti X dengan IP komputer kamu
-    // private const val BASE_URL = "http://localhost:3000/" // Hanya jika testing di browser/postman
+    // Production: ganti dengan URL server production Anda (HTTPS)
+    // Contoh: "https://api.mykasir.com/"
+    private const val PROD_BASE_URL = "http://10.0.2.2:3000/"
+    
+    // Otomatis pilih URL berdasarkan build type
+    private val BASE_URL: String
+        get() = if (BuildConfig.DEBUG) DEV_BASE_URL else PROD_BASE_URL
 
+    // Logging interceptor (hanya aktif di debug mode)
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY // Log semua request & response
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     private val okHttpClient = OkHttpClient.Builder()

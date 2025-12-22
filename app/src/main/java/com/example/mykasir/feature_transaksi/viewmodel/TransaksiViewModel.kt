@@ -63,8 +63,12 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+    companion object {
+        private const val TAG = "TransaksiViewModel"
+    }
+
     init {
-        Log.d("TransaksiViewModel", "ViewModel initialized, loading customers and transactions from API")
+        Log.d(TAG, "ViewModel initialized, loading customers and transactions from API")
         loadCustomers()
         loadTransactions()
     }
@@ -74,13 +78,13 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            Log.d("TransaksiViewModel", "Loading customers from API")
+            Log.d(TAG, "Loading customers from API")
 
             try {
                 val token = tokenManager.getToken()
                 if (token.isNullOrEmpty()) {
                     _errorMessage.value = "Token tidak ditemukan, silakan login ulang"
-                    Log.e("TransaksiViewModel", "Token is null or empty")
+                    Log.e(TAG, "Token is null or empty")
                     _isLoading.value = false
                     return@launch
                 }
@@ -89,7 +93,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                 
                 if (response.status == "success") {
                     val apiCustomers = response.data ?: emptyList()
-                    Log.d("TransaksiViewModel", "Successfully loaded ${apiCustomers.size} customers from API")
+                    Log.d(TAG, "Successfully loaded ${apiCustomers.size} customers from API")
                     
                     customers.clear()
                     customers.addAll(apiCustomers.map { apiCustomer ->
@@ -100,20 +104,20 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                             address = apiCustomer.address ?: ""
                         )
                     })
-                    Log.d("TransaksiViewModel", "Customers list updated: ${customers.size} items")
+                    Log.d(TAG, "Customers list updated: ${customers.size} items")
                 } else {
                     _errorMessage.value = "Gagal memuat pelanggan: ${response.message}"
-                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                    Log.e(TAG, "API error: ${response.message}")
                 }
             } catch (e: HttpException) {
                 _errorMessage.value = "Error jaringan: ${e.message}"
-                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+                Log.e(TAG, "HttpException: ${e.message}", e)
             } catch (e: IOException) {
                 _errorMessage.value = "Koneksi gagal, periksa internet Anda"
-                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+                Log.e(TAG, "IOException: ${e.message}", e)
             } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.message}"
-                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+                Log.e(TAG, "Exception: ${e.message}", e)
             } finally {
                 _isLoading.value = false
             }
@@ -125,13 +129,13 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            Log.d("TransaksiViewModel", "Loading transactions from API")
+            Log.d(TAG, "Loading transactions from API")
 
             try {
                 val token = tokenManager.getToken()
                 if (token.isNullOrEmpty()) {
                     _errorMessage.value = "Token tidak ditemukan, silakan login ulang"
-                    Log.e("TransaksiViewModel", "Token is null or empty")
+                    Log.e(TAG, "Token is null or empty")
                     _isLoading.value = false
                     return@launch
                 }
@@ -140,7 +144,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                 
                 if (response.status == "success") {
                     val apiTransactions = response.data ?: emptyList()
-                    Log.d("TransaksiViewModel", "Successfully loaded ${apiTransactions.size} transactions from API")
+                    Log.d(TAG, "Successfully loaded ${apiTransactions.size} transactions from API")
                     
                     transactions.clear()
                     transactions.addAll(apiTransactions.map { apiTx ->
@@ -159,20 +163,20 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                             cashierName = apiTx.cashierName
                         )
                     })
-                    Log.d("TransaksiViewModel", "Transactions list updated: ${transactions.size} items")
+                    Log.d(TAG, "Transactions list updated: ${transactions.size} items")
                 } else {
                     _errorMessage.value = "Gagal memuat transaksi: ${response.message}"
-                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                    Log.e(TAG, "API error: ${response.message}")
                 }
             } catch (e: HttpException) {
                 _errorMessage.value = "Error jaringan: ${e.message}"
-                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+                Log.e(TAG, "HttpException: ${e.message}", e)
             } catch (e: IOException) {
                 _errorMessage.value = "Koneksi gagal, periksa internet Anda"
-                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+                Log.e(TAG, "IOException: ${e.message}", e)
             } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.message}"
-                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+                Log.e(TAG, "Exception: ${e.message}", e)
             } finally {
                 _isLoading.value = false
             }
@@ -192,7 +196,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            Log.d("TransaksiViewModel", "Creating customer: $name")
+            Log.d(TAG, "Creating customer: $name")
 
             try {
                 val token = tokenManager.getToken()
@@ -212,7 +216,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                 
                 if (response.status == "success") {
                     val newCustomer = response.data
-                    Log.d("TransaksiViewModel", "Customer created successfully with ID: ${newCustomer?.id}")
+                    Log.d(TAG, "Customer created successfully with ID: ${newCustomer?.id}")
                     
                     if (newCustomer != null) {
                         val customer = Customer(
@@ -228,13 +232,13 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                     val error = "Gagal membuat pelanggan: ${response.message}"
                     _errorMessage.value = error
                     onError(error)
-                    Log.e("TransaksiViewModel", "API error: ${response.message}")
+                    Log.e(TAG, "API error: ${response.message}")
                 }
             } catch (e: Exception) {
                 val error = "Error: ${e.message}"
                 _errorMessage.value = error
                 onError(error)
-                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+                Log.e(TAG, "Exception: ${e.message}", e)
             } finally {
                 _isLoading.value = false
             }
@@ -254,10 +258,10 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                         val txResponse = apiService.deleteTransaction("Bearer $token", transaction.id)
                         if (txResponse.status == "success") {
                             transactions.remove(transaction)
-                            Log.d("TransaksiViewModel", "Transaction deleted: ${transaction.id}")
+                            Log.d(TAG, "Transaction deleted: ${transaction.id}")
                         }
                     } catch (e: Exception) {
-                        Log.e("TransaksiViewModel", "Error deleting transaction ${transaction.id}: ${e.message}", e)
+                        Log.e(TAG, "Error deleting transaction ${transaction.id}: ${e.message}", e)
                     }
                 }
 
@@ -265,10 +269,10 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                 val response = apiService.deleteCustomer("Bearer $token", customer.id)
                 if (response.status == "success") {
                     customers.remove(customer)
-                    Log.d("TransaksiViewModel", "Customer deleted: ${customer.id}")
+                    Log.d(TAG, "Customer deleted: ${customer.id}")
                 }
             } catch (e: Exception) {
-                Log.e("TransaksiViewModel", "Error deleting customer: ${e.message}", e)
+                Log.e(TAG, "Error deleting customer: ${e.message}", e)
             }
         }
     }
@@ -326,11 +330,14 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
             onError("Keranjang kosong")
             return
         }
+        
+        // Simpan total sebelum clear
+        val transactionTotal = total
 
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            Log.d("TransaksiViewModel", "Saving transaction for customer: $customerName")
+            Log.d(TAG, "Saving transaction for customer: $customerName")
 
             try {
                 val token = tokenManager.getToken()
@@ -347,7 +354,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                 
                 // Jika customer baru (id=0), buat dulu via API
                 if (customer.id == 0L) {
-                    Log.d("TransaksiViewModel", "Creating new customer: ${customer.name}")
+                    Log.d(TAG, "Creating new customer: ${customer.name}")
                     val createResponse = apiService.createCustomer(
                         "Bearer $token",
                         CustomerRequest(name = customer.name)
@@ -363,7 +370,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                                 address = newCustomer.address ?: ""
                             )
                             customers.add(customer)
-                            Log.d("TransaksiViewModel", "New customer created with ID: ${customer.id}")
+                            Log.d(TAG, "New customer created with ID: ${customer.id}")
                         }
                     } else {
                         val error = "Gagal membuat pelanggan: ${createResponse.message}"
@@ -386,16 +393,33 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 )
 
-                Log.d("TransaksiViewModel", "Transaction request: $requestBody")
+                Log.d(TAG, "Transaction request: $requestBody")
 
                 val response = apiService.createTransaction("Bearer $token", requestBody)
                 
                 if (response.status == "success") {
                     val newTransaction = response.data
-                    Log.d("TransaksiViewModel", "Transaction created successfully with ID: ${newTransaction?.id}")
+                    Log.d(TAG, "Transaction created successfully with ID: ${newTransaction?.id}")
                     
-                    // Reload transactions
-                    loadTransactions()
+                    // Tambahkan transaksi baru langsung ke list (tidak menunggu reload)
+                    if (newTransaction != null) {
+                        val transaction = Transaction(
+                            id = newTransaction.id,
+                            customerId = customer.id,
+                            items = currentItems.map { item ->
+                                TransactionItem(
+                                    productName = item.productName,
+                                    unitPrice = item.unitPrice,
+                                    quantity = item.quantity
+                                )
+                            },
+                            total = newTransaction.total,
+                            createdAt = newTransaction.createdAt,
+                            cashierName = newTransaction.cashierName
+                        )
+                        transactions.add(0, transaction) // Tambahkan di awal list
+                        Log.d(TAG, "Transaction added to local list. Total: ${transactions.size}")
+                    }
                     
                     // Clear cart
                     currentItems.clear()
@@ -403,7 +427,7 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                     // Tampilkan notifikasi transaksi berhasil
                     NotificationHelper.showTransactionNotification(
                         getApplication(),
-                        formatRupiah(total)
+                        formatRupiah(transactionTotal)
                     )
                     
                     onSuccess(customer.id)
@@ -411,23 +435,23 @@ class TransaksiViewModel(application: Application) : AndroidViewModel(applicatio
                     val error = "Gagal menyimpan transaksi: ${response.message}"
                     _errorMessage.value = error
                     onError(error)
-                    Log.e("TransaksiViewModel", error)
+                    Log.e(TAG, error)
                 }
             } catch (e: HttpException) {
                 val error = "Error jaringan: ${e.message}"
                 _errorMessage.value = error
                 onError(error)
-                Log.e("TransaksiViewModel", "HttpException: ${e.message}", e)
+                Log.e(TAG, "HttpException: ${e.message}", e)
             } catch (e: IOException) {
                 val error = "Koneksi gagal, periksa internet Anda"
                 _errorMessage.value = error
                 onError(error)
-                Log.e("TransaksiViewModel", "IOException: ${e.message}", e)
+                Log.e(TAG, "IOException: ${e.message}", e)
             } catch (e: Exception) {
                 val error = "Error: ${e.message}"
                 _errorMessage.value = error
                 onError(error)
-                Log.e("TransaksiViewModel", "Exception: ${e.message}", e)
+                Log.e(TAG, "Exception: ${e.message}", e)
             } finally {
                 _isLoading.value = false
             }

@@ -195,67 +195,18 @@ fun TransaksiListScreen(
     // Dialog konfirmasi hapus riwayat transaksi pelanggan
     val pending = customerToDelete
     if (pending != null) {
-        AlertDialog(
-            onDismissRequest = { customerToDelete = null },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.removeCustomer(pending)
-                        notifier?.show("Riwayat transaksi dihapus", NotificationType.Success, 1500)
-                        customerToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Hapus", fontWeight = FontWeight.SemiBold)
-                }
+        com.example.mykasir.core_ui.ConfirmationDialog(
+            title = "Hapus Riwayat",
+            message = "Apakah Anda yakin ingin menghapus riwayat transaksi ${pending.name}?",
+            confirmText = "Hapus",
+            dismissText = "Batal",
+            type = com.example.mykasir.core_ui.DialogType.Delete,
+            onConfirm = {
+                viewModel.removeCustomer(pending)
+                notifier?.show("Riwayat transaksi dihapus", NotificationType.Success, 1500)
+                customerToDelete = null
             },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { customerToDelete = null },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Batal", fontWeight = FontWeight.Medium)
-                }
-            },
-            icon = {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-                ) {
-                    Box(
-                        modifier = Modifier.size(46.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            },
-            title = {
-                Text(
-                    "Hapus Riwayat",
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            },
-            text = {
-                Text(
-                    "Apakah Anda yakin ingin menghapus riwayat transaksi ${pending.name}?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
-            },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = Color(0xFFF7FBFF),
-            tonalElevation = 0.dp
+            onDismiss = { customerToDelete = null }
         )
     }
 }

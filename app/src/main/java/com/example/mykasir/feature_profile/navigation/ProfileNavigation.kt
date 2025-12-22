@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mykasir.feature_profile.screen.EditProfileScreen
 import com.example.mykasir.feature_profile.screen.ProfileScreen
 import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
+import com.example.mykasir.feature_collaborator.screen.CollaboratorScreen
 
 /**
  * Navigation graph untuk fitur Profile
@@ -28,6 +29,9 @@ fun ProfileNav(
                 onEditProfile = {
                     navController.navigate("profile_edit")
                 },
+                onManageCollaborators = {
+                    navController.navigate("collaborators")
+                },
                 onLogout = onLogout,
                 viewModel = viewModel
             )
@@ -39,6 +43,14 @@ fun ProfileNav(
                     navController.popBackStack()
                 },
                 viewModel = viewModel
+            )
+        }
+
+        composable("collaborators") {
+            CollaboratorScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
     }

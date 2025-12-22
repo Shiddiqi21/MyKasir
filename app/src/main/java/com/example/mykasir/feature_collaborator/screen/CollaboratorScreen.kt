@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
 import com.example.mykasir.feature_collaborator.model.Collaborator
 import com.example.mykasir.feature_collaborator.viewmodel.AddCollaboratorState
 import com.example.mykasir.feature_collaborator.viewmodel.CollaboratorUiState
@@ -46,26 +47,17 @@ fun CollaboratorScreen(
     
     // Delete confirmation dialog
     deleteTarget?.let { collaborator ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = { Text("Hapus Kasir", fontWeight = FontWeight.Bold) },
-            text = { Text("Apakah Anda yakin ingin menghapus ${collaborator.name}?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.deleteCollaborator(collaborator.id)
-                        deleteTarget = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Hapus")
-                }
+        com.example.mykasir.core_ui.ConfirmationDialog(
+            title = "Hapus Kasir",
+            message = "Apakah Anda yakin ingin menghapus ${collaborator.name}?",
+            confirmText = "Hapus",
+            dismissText = "Batal",
+            type = com.example.mykasir.core_ui.DialogType.Delete,
+            onConfirm = {
+                viewModel.deleteCollaborator(collaborator.id)
+                deleteTarget = null
             },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) {
-                    Text("Batal")
-                }
-            }
+            onDismiss = { deleteTarget = null }
         )
     }
     
@@ -292,70 +284,172 @@ private fun AddCollaboratorDialog(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     
-    AlertDialog(
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        title = { 
-            Text("Tambah Kasir Baru", fontWeight = FontWeight.Bold) 
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 28.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                // Header with icon
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFF1E88E5).copy(alpha = 0.12f)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PersonAdd,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = androidx.compose.ui.graphics.Color(0xFF1E88E5)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            "Tambah Kasir Baru",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.Color(0xFF1A1A2E)
+                        )
+                        Text(
+                            "Isi data kasir di bawah ini",
+                            fontSize = 13.sp,
+                            color = androidx.compose.ui.graphics.Color(0xFF888888)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Input fields
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nama Lengkap") },
-                    leadingIcon = { Icon(Icons.Filled.Person, null) },
+                    leadingIcon = { Icon(Icons.Filled.Person, null, tint = androidx.compose.ui.graphics.Color(0xFF1E88E5)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = androidx.compose.ui.graphics.Color(0xFF1E88E5),
+                        unfocusedBorderColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
+                        focusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA),
+                        unfocusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA)
+                    )
                 )
+                
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Filled.Email, null) },
+                    leadingIcon = { Icon(Icons.Filled.Email, null, tint = androidx.compose.ui.graphics.Color(0xFF1E88E5)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = androidx.compose.ui.graphics.Color(0xFF1E88E5),
+                        unfocusedBorderColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
+                        focusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA),
+                        unfocusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA)
+                    )
                 )
+                
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Filled.Lock, null) },
+                    leadingIcon = { Icon(Icons.Filled.Lock, null, tint = androidx.compose.ui.graphics.Color(0xFF1E88E5)) },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = androidx.compose.ui.graphics.Color(0xFF1E88E5),
+                        unfocusedBorderColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
+                        focusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA),
+                        unfocusedContainerColor = androidx.compose.ui.graphics.Color(0xFFF8F9FA)
+                    )
                 )
                 
                 AnimatedVisibility(visible = addState is AddCollaboratorState.Error) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = (addState as? AddCollaboratorState.Error)?.message ?: "",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onAdd(email, password, name) },
-                enabled = addState !is AddCollaboratorState.Loading
-            ) {
-                if (addState is AddCollaboratorState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Tambah")
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = androidx.compose.ui.graphics.Color(0xFF666666)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFFE0E0E0))
+                    ) {
+                        Text("Batal", fontWeight = FontWeight.SemiBold)
+                    }
+                    
+                    Button(
+                        onClick = { onAdd(email, password, name) },
+                        enabled = addState !is AddCollaboratorState.Loading,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = androidx.compose.ui.graphics.Color(0xFF1E88E5),
+                            contentColor = androidx.compose.ui.graphics.Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    ) {
+                        if (addState is AddCollaboratorState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = androidx.compose.ui.graphics.Color.White
+                            )
+                        } else {
+                            Text("Tambah", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
-            }
         }
-    )
+    }
 }

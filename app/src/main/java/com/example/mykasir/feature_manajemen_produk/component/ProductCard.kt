@@ -26,10 +26,17 @@ fun ProductCard(
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
+    // Tentukan warna kartu berdasarkan stok
+    val cardColor = when {
+        product.stock == 0 -> Color(0xFFFFCDD2) // Merah - stok habis
+        product.stock <= product.minStock -> Color(0xFFFFE0E6) // Merah muda - stok tipis
+        else -> Color.White // Normal
+    }
+    
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
@@ -87,10 +94,22 @@ fun ProductCard(
                         color = Color(0xFF6E6E6E),
                         style = MaterialTheme.typography.bodySmall
                     )
+                    // Warna teks stok berdasarkan level
+                    val stockColor = when {
+                        product.stock == 0 -> Color(0xFFD32F2F) // Merah - habis
+                        product.stock <= product.minStock -> Color(0xFFE65100) // Oranye - tipis
+                        else -> Color.Gray
+                    }
+                    val stockText = when {
+                        product.stock == 0 -> "Stok: Habis"
+                        product.stock <= product.minStock -> "Stok: ${product.stock} (Tipis)"
+                        else -> "Stok: ${product.stock}"
+                    }
                     Text(
-                        text = "Stok: ${product.stock}",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.labelSmall
+                        text = stockText,
+                        color = stockColor,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (product.stock <= product.minStock) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
             }

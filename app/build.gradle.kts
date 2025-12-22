@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -39,6 +41,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,6 +82,15 @@ dependencies {
     // 5. OkHttp Logging Interceptor (untuk debug network)
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
+    // 6. Room Database (untuk offline caching)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    // 7. Firebase (untuk notifikasi)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
 
     // ✅ Testing
     testImplementation(libs.junit)

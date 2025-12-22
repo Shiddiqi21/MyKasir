@@ -30,6 +30,8 @@ import java.io.OutputStream
 import android.graphics.pdf.PdfDocument
 import android.graphics.Paint
 import com.example.mykasir.core_ui.formatRupiah
+import com.example.mykasir.core_ui.ReceiptPdfGenerator
+import com.example.mykasir.core_ui.NotificationHelper
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -57,7 +59,7 @@ fun SalesReportPage(
         mutableStateOf(buildRows(viewModel, selectedTime, mode))
     }
 
-    // Export: CreateDocument launcher (CSV & PDF)
+    // Export: CreateDocument launcher (CSV only - PDF uses ReceiptPdfGenerator)
     var pendingCsv by remember { mutableStateOf<String?>(null) }
     val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri: Uri? ->
         val csv = pendingCsv
@@ -67,17 +69,6 @@ fun SalesReportPage(
             }
         }
         pendingCsv = null
-    }
-
-    var pendingPdf by remember { mutableStateOf<List<List<String>>?>(null) }
-    val pdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri: Uri? ->
-        val data = pendingPdf
-        if (uri != null && data != null) {
-            context.contentResolver.openOutputStream(uri)?.use { os ->
-                writeSimplePdf(os, title = "Laporan Penjualan", subtitle = sdf.format(Date(selectedTime)), table = data)
-            }
-        }
-        pendingPdf = null
     }
 
     Scaffold(
@@ -106,7 +97,8 @@ fun SalesReportPage(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
+                windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
             )
         },
         containerColor = MaterialTheme.colorScheme.primary
@@ -123,8 +115,8 @@ fun SalesReportPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Segmented toggle Harian / Bulanan + tanggal dalam satu kartu filter
                 Card(
@@ -166,7 +158,7 @@ fun SalesReportPage(
                             ) { mode = ReportModeSR.Monthly }
                         }
 
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 text = if (mode == ReportModeSR.Daily) "Tanggal" else "Bulan",
                                 style = MaterialTheme.typography.labelSmall,
@@ -177,20 +169,33 @@ fun SalesReportPage(
                             } else {
                                 monthFormat.format(Date(selectedTime))
                             }
-                            OutlinedTextField(
-                                value = displayDate,
-                                onValueChange = {},
-                                readOnly = true,
-                                trailingIcon = {
-                                    IconButton(onClick = { showDatePicker = true }) {
-                                        Icon(Icons.Filled.CalendarMonth, contentDescription = null)
-                                    }
-                                },
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { showDatePicker = true },
-                                shape = RoundedCornerShape(14.dp)
-                            )
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = displayDate,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Icon(
+                                        Icons.Filled.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -312,8 +317,28 @@ fun SalesReportPage(
                         ) {
                             Button(
                                 onClick = {
-                                    pendingPdf = rows
-                                    pdfLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.pdf")
+                                    // Generate PDF menggunakan ReceiptPdfGenerator (sama seperti struk)
+                                    val pdfFile = ReceiptPdfGenerator.generateReport(
+                                        context = context,
+                                        title = "Laporan Penjualan",
+                                        subtitle = if (mode == ReportModeSR.Daily) {
+                                            "Tanggal: ${sdf.format(Date(selectedTime))}"
+                                        } else {
+                                            "Bulan: ${monthFormat.format(Date(selectedTime))}"
+                                        },
+                                        table = rows,
+                                        totalTransactions = itemCount,
+                                        grandTotal = grandTotal
+                                    )
+                                    pdfFile?.let { file ->
+                                        // Simpan ke Downloads
+                                        val saved = ReceiptPdfGenerator.saveToDownloads(context, file)
+                                        if (saved) {
+                                            NotificationHelper.showPdfNotification(context)
+                                        }
+                                        // Tampilkan share dialog
+                                        ReceiptPdfGenerator.sharePdf(context, file)
+                                    }
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(18.dp),

@@ -26,6 +26,7 @@ import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
     onEditProfile: () -> Unit,
+    onManageCollaborators: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
@@ -93,6 +94,7 @@ fun ProfileScreen(
                         ProfileContent(
                             userData = state.userData,
                             onEditProfile = onEditProfile,
+                            onManageCollaborators = onManageCollaborators,
                             onLogout = {
                                 viewModel.logout()
                                 onLogout()
@@ -111,6 +113,7 @@ fun ProfileScreen(
                             ProfileContent(
                                 userData = cachedData,
                                 onEditProfile = onEditProfile,
+                                onManageCollaborators = onManageCollaborators,
                                 onLogout = {
                                     viewModel.logout()
                                     onLogout()
@@ -135,8 +138,11 @@ fun ProfileScreen(
 fun ProfileContent(
     userData: UserData,
     onEditProfile: () -> Unit,
+    onManageCollaborators: () -> Unit = {},
     onLogout: () -> Unit
 ) {
+    // Check if user is owner
+    val isOwner = userData.role.lowercase() == "owner"
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -256,6 +262,35 @@ fun ProfileContent(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Kelola Kasir Button - Only for Owner
+        if (isOwner) {
+            Button(
+                onClick = onManageCollaborators,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.People,
+                    contentDescription = "Kelola Kasir",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Kelola Kasir",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         OutlinedButton(
             onClick = onLogout,

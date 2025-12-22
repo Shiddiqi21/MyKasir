@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Development helper: allow cleartext HTTP for local emulator and local network
-         Use only for development. Remove or restrict for production. -->
-
-    <!-- Option A: allow cleartext for all domains (quick, permissive) -->
-    <base-config cleartextTrafficPermitted="true" />
-
-    <!-- Option B (alternative, more restrictive): allow only specific domain/ip
-    <domain-config cleartextTrafficPermitted="true">
-        <domain>10.0.2.2</domain>
-    </domain-config>
+    <!-- 
+    DEVELOPMENT MODE: cleartext allowed for local testing
+    PRODUCTION MODE: comment out debug-overrides and set cleartextTrafficPermitted="false"
     -->
+
+    <!-- Production base config (HTTPS only) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Debug overrides: allow cleartext for local development -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- Allow cleartext for emulator and local network (development only) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android Emulator localhost -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- Local network IPs -->
+        <domain includeSubdomains="true">192.168.0.0/16</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
 </network-security-config>
