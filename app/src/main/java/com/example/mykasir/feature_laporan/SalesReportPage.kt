@@ -357,9 +357,40 @@ fun SalesReportPage(
 
                             Button(
                                 onClick = {
+                                    // Generate CSV dan simpan ke Downloads
                                     val csv = buildCsv(rows)
-                                    pendingCsv = csv
-                                    csvLauncher.launch("Laporan_${sdf.format(Date(selectedTime))}.csv")
+                                    val fileName = if (mode == ReportModeSR.Daily) {
+                                        "Laporan_${sdf.format(Date(selectedTime))}.csv"
+                                    } else {
+                                        "Laporan_${monthFormat.format(Date(selectedTime)).replace(" ", "_")}.csv"
+                                    }
+                                    
+                                    // Simpan ke Downloads folder
+                                    try {
+                                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
+                                            android.os.Environment.DIRECTORY_DOWNLOADS
+                                        )
+                                        val file = java.io.File(downloadsDir, fileName)
+                                        file.writeText(csv)
+                                        NotificationHelper.showReportNotification(context)
+                                        
+                                        // Share file
+                                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                                            context,
+                                            context.packageName + ".fileprovider",
+                                            file
+                                        )
+                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/csv"
+                                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Bagikan Laporan"))
+                                    } catch (e: Exception) {
+                                        // Fallback ke launcher jika gagal
+                                        pendingCsv = csv
+                                        csvLauncher.launch(fileName)
+                                    }
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(18.dp),

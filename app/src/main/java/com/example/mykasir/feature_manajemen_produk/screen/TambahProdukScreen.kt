@@ -14,8 +14,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +66,18 @@ fun TambahProdukScreen(
     var stokAwal by remember { mutableStateOf("") }
     var minStok by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    
+    // Kategori dropdown state
+    var expandedKategori by remember { mutableStateOf(false) }
+    val existingCategories by remember {
+        derivedStateOf {
+            viewModel.products
+                .map { it.category }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
+    }
 
     LaunchedEffect(productId) {
         if (isEditMode && productId != null) {
@@ -181,10 +197,111 @@ fun TambahProdukScreen(
 
                 // Input Fields
                 InputField(value = nama, onValueChange = { nama = it }, label = "Nama Produk")
-                InputField(value = kategori, onValueChange = { kategori = it }, label = "Kategori")
-                InputField(value = harga, onValueChange = { harga = it }, label = "Harga")
-                InputField(value = stokAwal, onValueChange = { stokAwal = it }, label = "Stok Awal")
-                InputField(value = minStok, onValueChange = { minStok = it }, label = "Stok Minimum")
+                
+                // Kategori Dropdown - Styled
+                Column {
+                    Text(
+                        text = "Kategori",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = expandedKategori,
+                        onExpandedChange = { expandedKategori = !expandedKategori }
+                    ) {
+                        OutlinedTextField(
+                            value = kategori,
+                            onValueChange = { kategori = it },
+                            placeholder = { Text("Pilih atau ketik kategori baru") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Category,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKategori)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = expandedKategori,
+                            onDismissRequest = { expandedKategori = false }
+                        ) {
+                            // Kategori yang sudah ada
+                            existingCategories.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Label,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(cat)
+                                        }
+                                    },
+                                    onClick = {
+                                        kategori = cat
+                                        expandedKategori = false
+                                    }
+                                )
+                            }
+                            
+                            // Divider jika ada kategori
+                            if (existingCategories.isNotEmpty()) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            }
+                            
+                            // Option untuk menambah kategori baru
+                            DropdownMenuItem(
+                                text = { 
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.secondary
+                                        )
+                                        Text(
+                                            "Ketik kategori baru di atas",
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    expandedKategori = false
+                                    // Fokus ke text field untuk mengetik
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                InputField(value = harga, onValueChange = { harga = it }, label = "Harga", isNumeric = true)
+                InputField(value = stokAwal, onValueChange = { stokAwal = it }, label = "Stok Awal", isNumeric = true)
+                InputField(value = minStok, onValueChange = { minStok = it }, label = "Stok Minimum", isNumeric = true)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -271,14 +388,33 @@ fun TambahProdukScreen(
 }
 
 @Composable
-fun InputField(value: String, onValueChange: (String) -> Unit, label: String) {
+fun InputField(
+    value: String, 
+    onValueChange: (String) -> Unit, 
+    label: String,
+    isNumeric: Boolean = false
+) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { newValue ->
+            // Jika numeric, filter hanya angka
+            if (isNumeric) {
+                onValueChange(newValue.filter { it.isDigit() })
+            } else {
+                onValueChange(newValue)
+            }
+        },
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
+        keyboardOptions = if (isNumeric) {
+            androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+            )
+        } else {
+            androidx.compose.foundation.text.KeyboardOptions.Default
+        },
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline

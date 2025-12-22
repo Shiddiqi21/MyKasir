@@ -103,7 +103,13 @@ fun CollaboratorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Kelola Kasir", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Kelola Kasir", 
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali")
@@ -113,7 +119,8 @@ fun CollaboratorScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                windowInsets = WindowInsets(0.dp)
             )
         },
         floatingActionButton = {

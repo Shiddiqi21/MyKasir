@@ -93,8 +93,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Update profile user (nama, storeName, dan optional password)
      */
-    fun updateProfile(name: String, storeName: String? = null, password: String? = null) {
-        Log.d("ProfileViewModel", "Updating profile. Name: $name, StoreName: $storeName, Pwd changed: ${password != null}")
+    fun updateProfile(name: String, storeName: String? = null, oldPassword: String? = null, newPassword: String? = null) {
+        Log.d("ProfileViewModel", "Updating profile. Name: $name, StoreName: $storeName, Pwd changed: ${newPassword != null}")
         _updateState.value = UpdateProfileState.Loading
 
         viewModelScope.launch {
@@ -105,8 +105,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 if (!storeName.isNullOrEmpty()) {
                     updates["storeName"] = storeName
                 }
-                if (!password.isNullOrEmpty()) {
-                    updates["password"] = password
+                if (!oldPassword.isNullOrEmpty() && !newPassword.isNullOrEmpty()) {
+                    updates["oldPassword"] = oldPassword
+                    updates["newPassword"] = newPassword
                 }
                 
                 val response = apiService.updateProfile(token, updates)

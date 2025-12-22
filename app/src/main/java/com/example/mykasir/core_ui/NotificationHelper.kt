@@ -194,9 +194,13 @@ object NotificationHelper {
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX) // MAX priority untuk heads-up
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Sound + Vibration
+            .setVibrate(longArrayOf(0, 250, 250, 250)) // Vibration pattern
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setFullScreenIntent(pendingIntent, true) // Untuk memastikan heads-up
             .build()
         
         try {

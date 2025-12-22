@@ -85,12 +85,20 @@ fun TransaksiFormScreen(
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.primary
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        )
+                    )
+                )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

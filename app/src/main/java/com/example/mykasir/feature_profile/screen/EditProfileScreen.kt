@@ -34,6 +34,7 @@ fun EditProfileScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var storeName by remember { mutableStateOf("") }
+    var oldPassword by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -172,9 +173,28 @@ fun EditProfileScreen(
                     enabled = updateState !is UpdateProfileState.Loading
                 )
 
+                // Old Password Input Field (required for password change)
+                OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = { oldPassword = it },
+                    label = { Text("Password Lama") },
+                    placeholder = { Text("Masukkan password lama") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Old Password"
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    enabled = updateState !is UpdateProfileState.Loading
+                )
+                
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Password Input Field
+                // New Password Input Field
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -250,12 +270,16 @@ fun EditProfileScreen(
                         }
                         
                         if (password.isNotEmpty()) {
-                            if (password.length < 6) {
-                                errorMessage = "Password minimal 6 karakter"
+                            if (oldPassword.isEmpty()) {
+                                errorMessage = "Password lama harus diisi untuk mengganti password"
+                                return@Button
+                            }
+                            if (password.length < 8) {
+                                errorMessage = "Password baru minimal 8 karakter"
                                 return@Button
                             }
                             if (password != confirmPassword) {
-                                errorMessage = "Password tidak cocok"
+                                errorMessage = "Password baru tidak cocok"
                                 return@Button
                             }
                         }
@@ -263,7 +287,8 @@ fun EditProfileScreen(
                         viewModel.updateProfile(
                             name = name.trim(),
                             storeName = storeName.trim().ifEmpty { null },
-                            password = if(password.isNotEmpty()) password else null
+                            oldPassword = if(password.isNotEmpty()) oldPassword else null,
+                            newPassword = if(password.isNotEmpty()) password else null
                         )
                     },
                     modifier = Modifier

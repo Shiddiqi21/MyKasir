@@ -14,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,12 +34,20 @@ import com.example.mykasir.feature_laporan.SalesReportPage
 import com.example.mykasir.feature_laporan.ChartPage
 import com.example.mykasir.feature_profile.navigation.ProfileNav
 
-// Definisikan item navigasi Anda
-val kasirNavItems = listOf(
+// Definisikan item navigasi untuk Owner (semua menu)
+val ownerNavItems = listOf(
     NavItem("Beranda", Icons.Filled.Home, "home"),
     NavItem("Stok", Icons.Filled.Inventory2, "package"),
     NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
     NavItem("Laporan", Icons.Filled.Description, "docs"),
+    NavItem("Profil", Icons.Filled.Person, "profile")
+)
+
+// Definisikan item navigasi untuk Kasir (tanpa Laporan)
+val cashierNavItems = listOf(
+    NavItem("Beranda", Icons.Filled.Home, "home"),
+    NavItem("Stok", Icons.Filled.Inventory2, "package"),
+    NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
     NavItem("Profil", Icons.Filled.Person, "profile")
 )
 
@@ -50,6 +59,14 @@ val kasirNavItems = listOf(
 fun MainAppHost(
     onLogout: () -> Unit = {}
 ) {
+    // Check if user is owner
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val tokenManager = remember { com.example.mykasir.core_data.local.TokenManager(context) }
+    val isOwner = remember { tokenManager.isOwner() }
+    
+    // Pilih nav items berdasarkan role
+    val navItems = if (isOwner) ownerNavItems else cashierNavItems
+    
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
     // Hoist ViewModel agar dapat dibagikan lintas fitur
@@ -61,7 +78,8 @@ fun MainAppHost(
             // Gunakan komponen Navbar reusable kita
             BottomNavBar(
                 navController = mainNavController,
-                items = kasirNavItems
+                items = navItems,
+                isOwner = isOwner
             )
         }
     ) { innerPadding ->

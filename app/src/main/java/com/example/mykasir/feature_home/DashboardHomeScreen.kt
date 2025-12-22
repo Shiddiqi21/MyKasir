@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,28 +86,37 @@ fun DashboardHomeScreen(
     val startToday = calToday.timeInMillis
     val endToday = startToday + 24L * 60 * 60 * 1000
 
-    val todayTx = remember(transaksiViewModel.transactions) {
-        transaksiViewModel.transactions.filter { it.timestamp in startToday until endToday }
+    // Gunakan derivedStateOf agar otomatis recalculate saat transactions berubah
+    val todayTx by remember {
+        derivedStateOf {
+            transaksiViewModel.transactions.filter { it.timestamp in startToday until endToday }
+        }
     }
-    val todayTotal = remember(todayTx) { todayTx.sumOf { it.total }.toLong() }
-    val todayCount = remember(todayTx) { todayTx.size }
+    val todayTotal by remember {
+        derivedStateOf { todayTx.sumOf { it.total }.toLong() }
+    }
+    val todayCount by remember {
+        derivedStateOf { todayTx.size }
+    }
 
     val rupiahFormatter = remember {
         NumberFormat.getNumberInstance(Locale("in", "ID"))
     }
-    val formattedTodayTotal = remember(todayTotal) {
-        "Rp " + rupiahFormatter.format(todayTotal)
+    val formattedTodayTotal by remember {
+        derivedStateOf { "Rp " + rupiahFormatter.format(todayTotal) }
     }
 
-    val weeklyPoints = remember(transaksiViewModel.transactions) {
-        computeLast7Days(transaksiViewModel)
+    val weeklyPoints by remember {
+        derivedStateOf { computeLast7Days(transaksiViewModel) }
     }
 
-    val lowStockProducts = remember(productViewModel.products) {
-        productViewModel.products
-            .filter { it.stock <= it.minStock }
-            .sortedBy { it.stock }
-            .take(3)
+    val lowStockProducts by remember {
+        derivedStateOf {
+            productViewModel.products
+                .filter { it.stock <= it.minStock }
+                .sortedBy { it.stock }
+                .take(3)
+        }
     }
 
     var visible by remember { mutableStateOf(false) }

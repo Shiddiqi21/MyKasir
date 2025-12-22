@@ -7,11 +7,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,8 +30,19 @@ import androidx.compose.ui.unit.dp
 import com.example.mykasir.R
 import com.example.mykasir.core_ui.LocalNotifier
 import com.example.mykasir.core_ui.NotificationType
+import com.example.mykasir.core_ui.formatRupiah
 import com.example.mykasir.feature_transaksi.model.Customer
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
+
+// Sort options enum
+enum class TransactionSortOption(val label: String) {
+    NEWEST("Terbaru"),
+    OLDEST("Terlama"),
+    HIGHEST_AMOUNT("Jumlah Tertinggi"),
+    LOWEST_AMOUNT("Jumlah Terendah"),
+    NAME_AZ("Nama A-Z"),
+    NAME_ZA("Nama Z-A")
+}
 
 @Composable
 fun TransaksiListScreen(
@@ -37,6 +52,11 @@ fun TransaksiListScreen(
 ) {
     val notifier = LocalNotifier.current
     var customerToDelete by remember { mutableStateOf<Customer?>(null) }
+    
+    // Search and Sort state
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedSortOption by remember { mutableStateOf(TransactionSortOption.NEWEST) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -135,9 +155,106 @@ fun TransaksiListScreen(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Cari pelanggan...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Sort Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Urutkan: ${selectedSortOption.label}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    
+                    Box {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Sort,
+                                contentDescription = "Urutkan",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            TransactionSortOption.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        selectedSortOption = option
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = {
+                                        if (option == selectedSortOption) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
 
-                val transactedCustomers = viewModel.customers.filter { c ->
-                    viewModel.transactionsFor(c.id).isNotEmpty()
+                // Filter and Sort customers
+                val transactedCustomers by remember(viewModel.customers, viewModel.transactions, searchQuery, selectedSortOption) {
+                    derivedStateOf {
+                        viewModel.customers
+                            .filter { c -> viewModel.transactionsFor(c.id).isNotEmpty() }
+                            .filter { c -> 
+                                searchQuery.isBlank() || c.name.contains(searchQuery, ignoreCase = true)
+                            }
+                            .let { list ->
+                                when (selectedSortOption) {
+                                    TransactionSortOption.NEWEST -> list.sortedByDescending { c ->
+                                        viewModel.transactionsFor(c.id).maxOfOrNull { it.timestamp } ?: 0L
+                                    }
+                                    TransactionSortOption.OLDEST -> list.sortedBy { c ->
+                                        viewModel.transactionsFor(c.id).minOfOrNull { it.timestamp } ?: Long.MAX_VALUE
+                                    }
+                                    TransactionSortOption.HIGHEST_AMOUNT -> list.sortedByDescending { c ->
+                                        viewModel.transactionsFor(c.id).sumOf { it.total }
+                                    }
+                                    TransactionSortOption.LOWEST_AMOUNT -> list.sortedBy { c ->
+                                        viewModel.transactionsFor(c.id).sumOf { it.total }
+                                    }
+                                    TransactionSortOption.NAME_AZ -> list.sortedBy { it.name.lowercase() }
+                                    TransactionSortOption.NAME_ZA -> list.sortedByDescending { it.name.lowercase() }
+                                }
+                            }
+                    }
                 }
 
                 if (transactedCustomers.isEmpty()) {

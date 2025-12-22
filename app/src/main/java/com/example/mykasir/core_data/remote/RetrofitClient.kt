@@ -1,11 +1,49 @@
 package com.example.mykasir.core_data.remote
 
 import com.example.mykasir.BuildConfig
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+
+/**
+ * Event untuk token expired - akan di-observe oleh MainActivity
+ */
+object TokenExpiredEvent {
+    private var listener: (() -> Unit)? = null
+    
+    fun setListener(callback: () -> Unit) {
+        listener = callback
+    }
+    
+    fun removeListener() {
+        listener = null
+    }
+    
+    fun notifyTokenExpired() {
+        listener?.invoke()
+    }
+}
+
+/**
+ * Interceptor untuk menangani response 401 (Unauthorized/Token Expired)
+ */
+class AuthInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val response = chain.proceed(request)
+        
+        // Jika response 401 (Unauthorized), notify app untuk logout
+        if (response.code == 401) {
+            TokenExpiredEvent.notifyTokenExpired()
+        }
+        
+        return response
+    }
+}
 
 object RetrofitClient {
 
@@ -29,9 +67,13 @@ object RetrofitClient {
             HttpLoggingInterceptor.Level.NONE
         }
     }
+    
+    // Auth interceptor untuk handle 401
+    private val authInterceptor = AuthInterceptor()
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(authInterceptor) // Tambahkan auth interceptor
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)

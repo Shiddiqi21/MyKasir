@@ -1,6 +1,8 @@
 package com.example.mykasir.navigationapp
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.example.mykasir.core_data.local.TokenManager
+import com.example.mykasir.core_data.remote.TokenExpiredEvent
 import com.example.mykasir.feature_auth.screen.LoginScreen
 import com.example.mykasir.feature_auth.screen.RegisterScreen
 import com.example.mykasir.feature_auth.viewmodel.LoginViewModel
@@ -33,6 +36,32 @@ fun RootNavGraph() {
     
     // Check if user is already logged in
     val isLoggedIn = remember { tokenManager.isLoggedIn() }
+    
+    // State untuk trigger token expired
+    var tokenExpired by remember { mutableStateOf(false) }
+    
+    // Setup listener untuk token expired
+    DisposableEffect(Unit) {
+        TokenExpiredEvent.setListener {
+            tokenExpired = true
+        }
+        
+        onDispose {
+            TokenExpiredEvent.removeListener()
+        }
+    }
+    
+    // Handle token expired - auto logout
+    LaunchedEffect(tokenExpired) {
+        if (tokenExpired) {
+            tokenManager.clearToken()
+            Toast.makeText(context, "Sesi Anda telah berakhir, silakan login ulang", Toast.LENGTH_LONG).show()
+            navController.navigate(Graph.AUTH) {
+                popUpTo(Graph.ROOT) { inclusive = true }
+            }
+            tokenExpired = false
+        }
+    }
 
     NavHost(
         navController = navController,
