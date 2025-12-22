@@ -31,6 +31,12 @@ interface ApiService {
         @Header("Authorization") token: String
     ): ApiResponse<UserData>
 
+    @PUT("api/auth/profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body updates: Map<String, String>
+    ): ApiResponse<UserData>
+
     // ==================== PRODUCTS ====================
     @GET("api/products")
     suspend fun getAllProducts(

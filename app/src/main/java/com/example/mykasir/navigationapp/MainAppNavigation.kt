@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -24,7 +23,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
 // --- Import Fitur Anda ---
-import com.example.mykasir.core_data.local.TokenManager
 import com.example.mykasir.feature_manajemen_produk.navigation.ManajemenProdukNav
 import com.example.mykasir.feature_manajemen_produk.viewmodel.ProductViewModel
 import com.example.mykasir.feature_transaksi.navigation.TransaksiNav
@@ -33,24 +31,14 @@ import com.example.mykasir.feature_home.DashboardHomeScreen
 import com.example.mykasir.feature_transaksi.viewmodel.TransaksiViewModel
 import com.example.mykasir.feature_laporan.SalesReportPage
 import com.example.mykasir.feature_laporan.ChartPage
-import com.example.mykasir.feature_profile.screen.ProfileScreen
-import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
-import com.example.mykasir.feature_collaborator.screen.CollaboratorScreen
+import com.example.mykasir.feature_profile.navigation.ProfileNav
 
-// Nav items untuk Owner (akses penuh termasuk Laporan)
-val ownerNavItems = listOf(
+// Definisikan item navigasi Anda
+val kasirNavItems = listOf(
     NavItem("Beranda", Icons.Filled.Home, "home"),
     NavItem("Stok", Icons.Filled.Inventory2, "package"),
     NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
     NavItem("Laporan", Icons.Filled.Description, "docs"),
-    NavItem("Profil", Icons.Filled.Person, "profile")
-)
-
-// Nav items untuk Cashier (tanpa Laporan)
-val cashierNavItems = listOf(
-    NavItem("Beranda", Icons.Filled.Home, "home"),
-    NavItem("Stok", Icons.Filled.Inventory2, "package"),
-    NavItem("Transaksi", Icons.Filled.Wallet, "wallet"),
     NavItem("Profil", Icons.Filled.Person, "profile")
 )
 
@@ -59,15 +47,9 @@ val cashierNavItems = listOf(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppHost(onLogout: () -> Unit = {}) {
-    // Get user role from TokenManager
-    val context = LocalContext.current
-    val tokenManager = TokenManager(context)
-    val isOwner = tokenManager.isOwner()
-    
-    // Select nav items based on role
-    val navItems = if (isOwner) ownerNavItems else cashierNavItems
-    
+fun MainAppHost(
+    onLogout: () -> Unit = {}
+) {
     // NavController ini untuk navigasi utama (Bottom Bar)
     val mainNavController = rememberNavController()
     // Hoist ViewModel agar dapat dibagikan lintas fitur
@@ -79,8 +61,7 @@ fun MainAppHost(onLogout: () -> Unit = {}) {
             // Gunakan komponen Navbar reusable kita
             BottomNavBar(
                 navController = mainNavController,
-                items = navItems,
-                isOwner = isOwner
+                items = kasirNavItems
             )
         }
     ) { innerPadding ->
@@ -114,15 +95,12 @@ fun MainAppHost(onLogout: () -> Unit = {}) {
                         }
                     },
                     onOpenLaporan = {
-                        // Hanya navigasi ke laporan jika owner
-                        if (isOwner) {
-                            mainNavController.navigate("docs") {
-                                popUpTo(mainNavController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                        mainNavController.navigate("docs") {
+                            popUpTo(mainNavController.graph.findStartDestination().id) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )
@@ -148,61 +126,36 @@ fun MainAppHost(onLogout: () -> Unit = {}) {
                     transaksiViewModel = transaksiViewModel
                 )
             }
-            
-            // Rute Laporan - hanya bisa diakses owner (tetap ada untuk keamanan)
             composable("docs") {
-                if (isOwner) {
-                    val laporanNav = rememberNavController()
-                    NavHost(navController = laporanNav, startDestination = "laporan_home") {
-                        composable("laporan_home") {
-                            LaporanScreen(
-                                viewModel = transaksiViewModel,
-                                onOpenLaporan = { laporanNav.navigate("sales_report") },
-                                onOpenGrafik = { laporanNav.navigate("chart_page") }
-                            )
-                        }
-                        composable("sales_report") {
-                            SalesReportPage(
-                                onBack = { laporanNav.popBackStack() },
-                                viewModel = transaksiViewModel
-                            )
-                        }
-                        composable("chart_page") {
-                            ChartPage(
-                                onBack = { laporanNav.popBackStack() },
-                                viewModel = transaksiViewModel
-                            )
-                        }
+                val laporanNav = rememberNavController()
+                NavHost(navController = laporanNav, startDestination = "laporan_home") {
+                    composable("laporan_home") {
+                        LaporanScreen(
+                            viewModel = transaksiViewModel,
+                            onOpenLaporan = { laporanNav.navigate("sales_report") },
+                            onOpenGrafik = { laporanNav.navigate("chart_page") }
+                        )
                     }
-                } else {
-                    // Jika kasir mencoba akses, tampilkan pesan
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Akses tidak tersedia untuk kasir")
+                    composable("sales_report") {
+                        SalesReportPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
+                    }
+                    composable("chart_page") {
+                        ChartPage(
+                            onBack = { laporanNav.popBackStack() },
+                            viewModel = transaksiViewModel
+                        )
                     }
                 }
             }
-            
-            // Rute profil dengan data user yang login
+            // Rute profil dengan ProfileNav
             composable("profile") {
-                val profileViewModel: ProfileViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-                ProfileScreen(
-                    viewModel = profileViewModel,
-                    onLogout = onLogout,
-                    onManageCollaborators = {
-                        mainNavController.navigate("collaborators")
-                    }
-                )
+                ProfileNav(onLogout = onLogout)
             }
-            
-            // Rute collaborators (manage kasir) - hanya untuk owner
-            composable("collaborators") {
-                CollaboratorScreen(
-                    onBack = { mainNavController.popBackStack() }
-                )
-            }
+
+            // rute home kini di-handle oleh DashboardHomeScreen di atas
         }
     }
 }

@@ -1,371 +1,129 @@
 package com.example.mykasir.feature_profile.screen
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mykasir.core_data.remote.UserData
 import com.example.mykasir.feature_profile.viewmodel.ProfileUiState
 import com.example.mykasir.feature_profile.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
+    onEditProfile: () -> Unit,
     onLogout: () -> Unit,
-    onManageCollaborators: () -> Unit = {}
+    viewModel: ProfileViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    
-    var visible by remember { mutableStateOf(false) }
-    
+    val profileState by viewModel.profileUiState.collectAsState()
+
+    // Load profile saat pertama kali
     LaunchedEffect(Unit) {
-        visible = true
+        viewModel.loadProfile()
     }
-    
-    LaunchedEffect(uiState) {
-        if (uiState is ProfileUiState.LoggedOut) {
-            onLogout()
-        }
-    }
-    
-    val contentAlpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        label = "profileContentAlpha"
-    )
-    val contentOffset by animateDpAsState(
-        targetValue = if (visible) 0.dp else 12.dp,
-        label = "profileContentOffset"
-    )
-    
-    // Logout confirmation dialog
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { 
-                Text(
-                    text = "Konfirmasi Logout",
-                    fontWeight = FontWeight.Bold
-                ) 
-            },
-            text = { 
-                Text("Apakah anda yakin ingin keluar dari akun ini?") 
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showLogoutDialog = false
-                        viewModel.logout()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Keluar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Batal")
-                }
-            }
-        )
-    }
-    
-    Box(
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Header gradient background
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                        )
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     )
                 )
-        )
-        
+            )
+    ) {
+        // Header (Blue Section)
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 32.dp)
         ) {
-            // Header area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Profil Saya",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Kelola akun Anda",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                Column {
+                    Text(
+                        text = "Profil Saya",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Kelola informasi akun anda",
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
-            
-            // Content surface
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = contentAlpha
-                        translationY = contentOffset.toPx()
-                    },
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        }
+
+        // Content (White Curved Section)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
-                when (val state = uiState) {
+                when (val state = profileState) {
                     is ProfileUiState.Loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Memuat profil...")
-                        }
+                        LoadingView()
                     }
                     is ProfileUiState.Success -> {
-                        val profile = state.profile
-                        val initials = profile.name.take(2).uppercase()
-                        
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp, vertical = 24.dp)
-                                .verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Avatar with initials
+                        ProfileContent(
+                            userData = state.userData,
+                            onEditProfile = onEditProfile,
+                            onLogout = {
+                                viewModel.logout()
+                                onLogout()
+                            }
+                        )
+                    }
+                    is ProfileUiState.Error -> {
+                        ErrorView(
+                            message = state.message,
+                            onRetry = { viewModel.loadProfile() }
+                        )
+                    }
+                    is ProfileUiState.Idle -> {
+                        val cachedData = viewModel.getCachedUserData()
+                        if (cachedData != null) {
+                            ProfileContent(
+                                userData = cachedData,
+                                onEditProfile = onEditProfile,
+                                onLogout = {
+                                    viewModel.logout()
+                                    onLogout()
+                                }
+                            )
+                        } else {
                             Box(
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .background(
-                                        brush = Brush.linearGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.primary,
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                                            ),
-                                            tileMode = TileMode.Clamp
-                                        ),
-                                        shape = CircleShape
-                                    ),
+                                modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = initials,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                CircularProgressIndicator()
                             }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            // Name
-                            Text(
-                                text = profile.name,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            
-                            // Store name
-                            Text(
-                                text = profile.storeName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            
-                            // Role badge
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = if (profile.isOwner) 
-                                    Color(0xFF4CAF50).copy(alpha = 0.15f) 
-                                else 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            ) {
-                                Text(
-                                    text = profile.role,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                    color = if (profile.isOwner) 
-                                        Color(0xFF2E7D32) 
-                                    else 
-                                        MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            // Info Cards
-                            Text(
-                                text = "Informasi Akun",
-                                modifier = Modifier.fillMaxWidth(),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            
-                            ProfileInfoCard(
-                                icon = Icons.Filled.Person,
-                                label = "Nama Lengkap",
-                                value = profile.name,
-                                iconColor = MaterialTheme.colorScheme.primary
-                            )
-                            
-                            ProfileInfoCard(
-                                icon = Icons.Filled.Email,
-                                label = "Alamat Email",
-                                value = profile.email,
-                                iconColor = MaterialTheme.colorScheme.secondary
-                            )
-                            
-                            ProfileInfoCard(
-                                icon = Icons.Filled.Store,
-                                label = "Nama Toko",
-                                value = profile.storeName,
-                                iconColor = Color(0xFF9C27B0)
-                            )
-                            
-                            ProfileInfoCard(
-                                icon = Icons.Filled.Work,
-                                label = "Jabatan",
-                                value = profile.role,
-                                iconColor = MaterialTheme.colorScheme.tertiary
-                            )
-                            
-                            // Manage Collaborators button (only for owners)
-                            if (profile.isOwner) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Text(
-                                    text = "Pengaturan Toko",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                
-                                OutlinedButton(
-                                    onClick = onManageCollaborators,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(52.dp),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.People,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Kelola Kasir",
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                            
-                            Spacer(modifier = Modifier.height(24.dp))
-                            
-                            // Logout button
-                            Button(
-                                onClick = { showLogoutDialog = true },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ExitToApp,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Keluar dari Akun",
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                    }
-                    is ProfileUiState.LoggedOut -> {
-                        // Will navigate out
                     }
                 }
             }
@@ -374,17 +132,182 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileInfoCard(
+fun ProfileContent(
+    userData: UserData,
+    onEditProfile: () -> Unit,
+    onLogout: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Avatar section
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = userData.name.take(2).uppercase(),
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = userData.name,
+            style = MaterialTheme.typography.headlineSmall, // Laporan uses titleMedium/Large, sticking closer to that visuals
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = userData.email,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Role badge
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Text(
+                text = userData.role.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Info Cards (Styled like ActionCard in Laporan)
+        InfoCard(
+            icon = Icons.Default.Person,
+            title = "Nama Lengkap",
+            value = userData.name,
+            iconColor = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        InfoCard(
+            icon = Icons.Default.Email,
+            title = "Email",
+            value = userData.email,
+            iconColor = MaterialTheme.colorScheme.secondary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        InfoCard(
+            icon = Icons.Default.Badge,
+            title = "Role",
+            value = userData.role,
+            iconColor = MaterialTheme.colorScheme.tertiary
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Large Edit Button (Requested to keep)
+        Button(
+            onClick = onEditProfile,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp), // Matching Laporan cards rounded style
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Edit Profil",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            ),
+            border = ButtonDefaults.outlinedButtonBorder.copy(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.error,
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    )
+                )
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Logout,
+                contentDescription = "Logout",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Keluar",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun InfoCard(
     icon: ImageVector,
-    label: String,
+    title: String,
     value: String,
     iconColor: Color
 ) {
+    // Styled to match ActionCard in LaporanScreen: Color(0xFFF5F5F7), Rounded(18.dp)
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F7)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF5F5F7) // Light gray like Laporan
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -392,39 +315,87 @@ private fun ProfileInfoCard(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icon Badge
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(40.dp)
                     .background(
-                        iconColor.copy(alpha = 0.14f),
-                        shape = RoundedCornerShape(12.dp)
+                        iconColor.copy(alpha = 0.1f),
+                        RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = title,
                     tint = iconColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
-            
-            Spacer(modifier = Modifier.width(14.dp))
-            
-            Column {
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
     }
 }
 
+@Composable
+fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+fun ErrorView(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Error,
+                contentDescription = "Error",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onRetry) {
+                Text("Coba Lagi")
+            }
+        }
+    }
+}
