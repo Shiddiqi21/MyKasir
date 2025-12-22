@@ -334,7 +334,7 @@ fun SalesReportPage(
                                         // Simpan ke Downloads
                                         val saved = ReceiptPdfGenerator.saveToDownloads(context, file)
                                         if (saved) {
-                                            NotificationHelper.showPdfNotification(context)
+                                            NotificationHelper.showReportNotification(context)
                                         }
                                         // Tampilkan share dialog
                                         ReceiptPdfGenerator.sharePdf(context, file)

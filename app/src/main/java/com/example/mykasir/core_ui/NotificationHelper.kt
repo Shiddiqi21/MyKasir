@@ -30,40 +30,44 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
-            // Channel untuk notifikasi umum
+            // Channel untuk notifikasi umum - HIGH untuk melayang di layar
             val generalChannel = NotificationChannel(
                 CHANNEL_ID_GENERAL,
                 "Notifikasi Umum",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifikasi umum aplikasi"
+                enableVibration(true)
             }
             
-            // Channel untuk transaksi
+            // Channel untuk transaksi - HIGH untuk melayang di layar
             val transactionChannel = NotificationChannel(
                 CHANNEL_ID_TRANSACTION,
                 "Transaksi",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifikasi transaksi berhasil"
+                enableVibration(true)
             }
             
-            // Channel untuk stok
+            // Channel untuk stok - HIGH untuk melayang di layar
             val stockChannel = NotificationChannel(
                 CHANNEL_ID_STOCK,
                 "Peringatan Stok",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifikasi stok menipis"
+                enableVibration(true)
             }
             
-            // Channel untuk PDF
+            // Channel untuk PDF - HIGH untuk melayang di layar
             val pdfChannel = NotificationChannel(
                 CHANNEL_ID_PDF,
-                "Struk PDF",
-                NotificationManager.IMPORTANCE_DEFAULT
+                "Dokumen PDF",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifikasi pembuatan PDF"
+                enableVibration(true)
             }
             
             notificationManager.createNotificationChannels(
@@ -145,14 +149,26 @@ object NotificationHelper {
     }
     
     /**
-     * Notifikasi PDF berhasil dibuat
+     * Notifikasi Struk PDF berhasil dibuat
      */
     fun showPdfNotification(context: Context) {
         showNotification(
             context = context,
             channelId = CHANNEL_ID_PDF,
             title = "Struk PDF Dibuat 📄",
-            message = "Struk PDF berhasil dibuat"
+            message = "Struk transaksi PDF berhasil dibuat dan disimpan"
+        )
+    }
+    
+    /**
+     * Notifikasi Laporan PDF berhasil dibuat
+     */
+    fun showReportNotification(context: Context) {
+        showNotification(
+            context = context,
+            channelId = CHANNEL_ID_PDF,
+            title = "Laporan PDF Dibuat 📊",
+            message = "Laporan penjualan PDF berhasil dibuat dan disimpan"
         )
     }
     

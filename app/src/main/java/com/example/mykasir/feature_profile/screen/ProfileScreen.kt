@@ -234,7 +234,7 @@ fun ProfileContent(
         InfoCard(
             icon = Icons.Default.Badge,
             title = "Role",
-            value = userData.role,
+            value = userData.role.replaceFirstChar { it.uppercase() },
             iconColor = MaterialTheme.colorScheme.tertiary
         )
 

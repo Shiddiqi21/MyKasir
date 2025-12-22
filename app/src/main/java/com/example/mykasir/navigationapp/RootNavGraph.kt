@@ -32,30 +32,26 @@ fun RootNavGraph() {
     val tokenManager = remember { TokenManager(context) }
     
     // Check if user is already logged in
-    var startDestination by remember { mutableStateOf<String?>(null) }
-    
-    LaunchedEffect(Unit) {
-        startDestination = if (tokenManager.isLoggedIn()) {
-            Graph.MAIN  // Skip to main if already logged in
-        } else {
-            "landing"   // Go to landing/auth if not logged in
-        }
-    }
-    
-    // Wait until we determine the start destination
-    if (startDestination == null) return
+    val isLoggedIn = remember { tokenManager.isLoggedIn() }
 
     NavHost(
         navController = navController,
         route = Graph.ROOT,
-        startDestination = startDestination!!
+        startDestination = "landing"  // Selalu mulai dari landing page
     ) {
         // Landing Screen
         composable(route = "landing") {
             LandingScreen(
                 onFinished = {
-                    navController.navigate(Graph.AUTH) {
-                        popUpTo("landing") { inclusive = true }
+                    // Jika sudah login, langsung ke main, jika belum ke auth
+                    if (isLoggedIn) {
+                        navController.navigate(Graph.MAIN) {
+                            popUpTo("landing") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Graph.AUTH) {
+                            popUpTo("landing") { inclusive = true }
+                        }
                     }
                 }
             )

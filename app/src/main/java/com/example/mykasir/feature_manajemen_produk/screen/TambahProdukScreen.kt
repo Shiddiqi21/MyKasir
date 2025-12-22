@@ -1,6 +1,8 @@
 package com.example.mykasir.feature_manajemen_produk.screen
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.navigation.NavController
@@ -308,6 +311,28 @@ fun UploadFotoSection(
         }
     }
 
+    // Fungsi untuk membuka kamera
+    val launchCamera: () -> Unit = {
+        val photoFile = createImageFile(context)
+        val uri = FileProvider.getUriForFile(
+            context,
+            context.packageName + ".fileprovider",
+            photoFile
+        )
+        tempUri = uri
+        cameraLauncher.launch(uri)
+    }
+
+    // Permission launcher untuk kamera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission granted, launch camera
+            launchCamera()
+        }
+    }
+
     // Dialog Pilihan
     if (showDialog) {
         AlertDialog(
@@ -320,16 +345,20 @@ fun UploadFotoSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                // Buat file temp untuk kamera
-                                val photoFile = createImageFile(context)
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    context.packageName + ".fileprovider",
-                                    photoFile
-                                )
-                                tempUri = uri
-                                cameraLauncher.launch(uri)
                                 showDialog = false
+                                // Cek permission dulu sebelum buka kamera
+                                val cameraPermission = Manifest.permission.CAMERA
+                                when {
+                                    ContextCompat.checkSelfPermission(context, cameraPermission) == 
+                                        PackageManager.PERMISSION_GRANTED -> {
+                                        // Permission sudah ada, langsung buka kamera
+                                        launchCamera()
+                                    }
+                                    else -> {
+                                        // Minta permission dulu
+                                        cameraPermissionLauncher.launch(cameraPermission)
+                                    }
+                                }
                             }
                             .padding(vertical = 12.dp)
                     )
