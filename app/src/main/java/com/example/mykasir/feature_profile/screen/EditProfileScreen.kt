@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ fun EditProfileScreen(
     viewModel: ProfileViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
+    var storeName by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -41,11 +43,12 @@ fun EditProfileScreen(
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
 
-    // Load current name dari profile
+    // Load current name dan store name dari profile
     LaunchedEffect(profileState) {
         val cachedData = viewModel.getCachedUserData()
         if (cachedData != null) {
             name = cachedData.name
+            storeName = cachedData.storeName ?: ""
         }
     }
 
@@ -150,6 +153,27 @@ fun EditProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Store Name Input Field
+                OutlinedTextField(
+                    value = storeName,
+                    onValueChange = { storeName = it },
+                    label = { Text("Nama Toko") },
+                    placeholder = { Text("Masukkan nama toko") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Store,
+                            contentDescription = "Store Name"
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    enabled = updateState !is UpdateProfileState.Loading
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // Password Input Field
                 OutlinedTextField(
                     value = password,
@@ -236,7 +260,11 @@ fun EditProfileScreen(
                             }
                         }
                         
-                        viewModel.updateProfile(name.trim(), if(password.isNotEmpty()) password else null)
+                        viewModel.updateProfile(
+                            name = name.trim(),
+                            storeName = storeName.trim().ifEmpty { null },
+                            password = if(password.isNotEmpty()) password else null
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()

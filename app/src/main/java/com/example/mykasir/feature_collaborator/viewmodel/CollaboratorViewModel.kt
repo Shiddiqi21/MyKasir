@@ -145,4 +145,66 @@ class CollaboratorViewModel(application: Application) : AndroidViewModel(applica
     fun resetAddState() {
         _addState.value = AddCollaboratorState.Idle
     }
+
+    private val _editState = MutableStateFlow<EditCollaboratorState>(EditCollaboratorState.Idle)
+    val editState: StateFlow<EditCollaboratorState> = _editState.asStateFlow()
+
+    fun updateCollaborator(id: Long, name: String?, password: String?) {
+        if (name.isNullOrBlank() && password.isNullOrBlank()) {
+            _editState.value = EditCollaboratorState.Error("Nama atau password harus diisi")
+            return
+        }
+
+        if (!password.isNullOrBlank() && password.length < 8) {
+            _editState.value = EditCollaboratorState.Error("Password minimal 8 karakter")
+            return
+        }
+
+        _editState.value = EditCollaboratorState.Loading
+
+        viewModelScope.launch {
+            try {
+                val token = tokenManager.getAuthHeader()
+                val response = apiService.updateCollaborator(
+                    token = token,
+                    id = id,
+                    name = name?.takeIf { it.isNotBlank() },
+                    password = password?.takeIf { it.isNotBlank() }
+                )
+
+                if (response.status == "success") {
+                    _editState.value = EditCollaboratorState.Success
+                    loadCollaborators() // Refresh list
+                } else {
+                    _editState.value = EditCollaboratorState.Error(response.message ?: "Gagal update kasir")
+                }
+            } catch (e: HttpException) {
+                val errorMsg = when (e.code()) {
+                    401 -> "Sesi habis, silakan login ulang"
+                    403 -> "Anda tidak memiliki akses"
+                    404 -> "Kasir tidak ditemukan"
+                    else -> "Error: ${e.code()}"
+                }
+                Log.e("CollaboratorVM", "HTTP Error: $errorMsg", e)
+                _editState.value = EditCollaboratorState.Error(errorMsg)
+            } catch (e: IOException) {
+                Log.e("CollaboratorVM", "Network Error", e)
+                _editState.value = EditCollaboratorState.Error("Tidak dapat terhubung ke server")
+            } catch (e: Exception) {
+                Log.e("CollaboratorVM", "Error", e)
+                _editState.value = EditCollaboratorState.Error("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun resetEditState() {
+        _editState.value = EditCollaboratorState.Idle
+    }
+}
+
+sealed interface EditCollaboratorState {
+    object Idle : EditCollaboratorState
+    object Loading : EditCollaboratorState
+    object Success : EditCollaboratorState
+    data class Error(val message: String) : EditCollaboratorState
 }

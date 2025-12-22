@@ -111,7 +111,11 @@ fun DashboardHomeScreen(
 
     var visible by remember { mutableStateOf(false) }
 
+    // Load data saat dashboard pertama kali dibuka
     LaunchedEffect(Unit) {
+        // Muat data transaksi dan produk
+        transaksiViewModel.loadTransactions()
+        productViewModel.loadProducts()
         visible = true
     }
 

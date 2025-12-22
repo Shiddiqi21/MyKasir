@@ -36,12 +36,22 @@ fun CollaboratorScreen(
     
     var showAddDialog by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<Collaborator?>(null) }
+    var editTarget by remember { mutableStateOf<Collaborator?>(null) }
+    val editState by viewModel.editState.collectAsState()
     
     // Handle add success
     LaunchedEffect(addState) {
         if (addState is AddCollaboratorState.Success) {
             showAddDialog = false
             viewModel.resetAddState()
+        }
+    }
+
+    // Handle edit success
+    LaunchedEffect(editState) {
+        if (editState is com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState.Success) {
+            editTarget = null
+            viewModel.resetEditState()
         }
     }
     
@@ -58,6 +68,21 @@ fun CollaboratorScreen(
                 deleteTarget = null
             },
             onDismiss = { deleteTarget = null }
+        )
+    }
+
+    // Edit dialog
+    editTarget?.let { collaborator ->
+        EditCollaboratorDialog(
+            collaborator = collaborator,
+            editState = editState,
+            onDismiss = { 
+                editTarget = null
+                viewModel.resetEditState()
+            },
+            onSave = { name, password ->
+                viewModel.updateCollaborator(collaborator.id.toLong(), name, password)
+            }
         )
     }
     
@@ -181,6 +206,7 @@ fun CollaboratorScreen(
                             items(state.collaborators) { collaborator ->
                                 CollaboratorCard(
                                     collaborator = collaborator,
+                                    onEdit = { editTarget = collaborator },
                                     onDelete = { deleteTarget = collaborator }
                                 )
                             }
@@ -195,6 +221,7 @@ fun CollaboratorScreen(
 @Composable
 private fun CollaboratorCard(
     collaborator: Collaborator,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -258,6 +285,16 @@ private fun CollaboratorCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+            
+            // Edit button
+            IconButton(
+                onClick = onEdit,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = Color(0xFF1E88E5)
+                )
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit")
             }
             
             // Delete button
@@ -446,6 +483,211 @@ private fun AddCollaboratorDialog(
                             )
                         } else {
                             Text("Tambah", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditCollaboratorDialog(
+    collaborator: Collaborator,
+    editState: com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState,
+    onDismiss: () -> Unit,
+    onSave: (name: String?, password: String?) -> Unit
+) {
+    var name by remember { mutableStateOf(collaborator.name) }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 28.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Icon
+                Surface(
+                    modifier = Modifier.size(64.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E88E5).copy(alpha = 0.12f)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = Color(0xFF1E88E5)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // Title
+                Text(
+                    text = "Edit Kasir",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A2E)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Email (tidak bisa diubah)
+                Text(
+                    text = collaborator.email,
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666)
+                )
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // Name input
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nama Kasir") },
+                    leadingIcon = { Icon(Icons.Filled.Person, null, tint = Color(0xFF1E88E5)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF1E88E5),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedContainerColor = Color(0xFFF8F9FA),
+                        unfocusedContainerColor = Color(0xFFF8F9FA)
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Password input
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password Baru (Opsional)") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, null, tint = Color(0xFF1E88E5)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF1E88E5),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedContainerColor = Color(0xFFF8F9FA),
+                        unfocusedContainerColor = Color(0xFFF8F9FA)
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Confirm Password input
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Konfirmasi Password") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, null, tint = Color(0xFF1E88E5)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF1E88E5),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedContainerColor = Color(0xFFF8F9FA),
+                        unfocusedContainerColor = Color(0xFFF8F9FA)
+                    ),
+                    enabled = password.isNotEmpty()
+                )
+                
+                // Error message
+                AnimatedVisibility(visible = editState is com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState.Error) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = (editState as? com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState.Error)?.message ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                
+                // Password mismatch warning
+                AnimatedVisibility(visible = password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Password tidak cocok",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFF666666)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    ) {
+                        Text("Batal", fontWeight = FontWeight.SemiBold)
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val passwordToSend = if (password.isNotEmpty() && password == confirmPassword) password else null
+                            val nameToSend = if (name != collaborator.name) name else null
+                            if (nameToSend != null || passwordToSend != null) {
+                                onSave(nameToSend, passwordToSend)
+                            }
+                        },
+                        enabled = editState !is com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState.Loading &&
+                                  (name != collaborator.name || (password.isNotEmpty() && password == confirmPassword)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1E88E5),
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    ) {
+                        if (editState is com.example.mykasir.feature_collaborator.viewmodel.EditCollaboratorState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text("Simpan", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }

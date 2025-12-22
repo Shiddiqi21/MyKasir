@@ -104,7 +104,11 @@ fun ProfileScreen(
                     is ProfileUiState.Error -> {
                         ErrorView(
                             message = state.message,
-                            onRetry = { viewModel.loadProfile() }
+                            onRetry = { viewModel.loadProfile() },
+                            onLogout = {
+                                viewModel.logout()
+                                onLogout()
+                            }
                         )
                     }
                     is ProfileUiState.Idle -> {
@@ -234,34 +238,46 @@ fun ProfileContent(
             iconColor = MaterialTheme.colorScheme.tertiary
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Nama Toko Card
+        InfoCard(
+            icon = Icons.Default.Store,
+            title = "Nama Toko",
+            value = userData.storeName ?: "Belum diatur",
+            iconColor = Color(0xFF43A047)
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Large Edit Button (Requested to keep)
-        Button(
-            onClick = onEditProfile,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp), // Matching Laporan cards rounded style
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Edit",
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Edit Profil",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        // Edit Profile Button - Only for Owner
+        if (isOwner) {
+            Button(
+                onClick = onEditProfile,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Edit Profil",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // Kelola Kasir Button - Only for Owner
         if (isOwner) {
@@ -406,7 +422,8 @@ fun LoadingView() {
 @Composable
 fun ErrorView(
     message: String,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -428,8 +445,26 @@ fun ErrorView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onRetry) {
-                Text("Coba Lagi")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(onClick = onRetry) {
+                    Text("Coba Lagi")
+                }
+                Button(
+                    onClick = onLogout,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Logout")
+                }
             }
         }
     }

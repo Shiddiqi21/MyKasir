@@ -91,13 +91,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Update profile user (saat ini hanya nama)
+     * Update profile user (nama, storeName, dan optional password)
      */
-    /**
-     * Update profile user (nama dan optional password)
-     */
-    fun updateProfile(name: String, password: String? = null) {
-        Log.d("ProfileViewModel", "Updating profile. Name: $name, Pwd changed: ${password != null}")
+    fun updateProfile(name: String, storeName: String? = null, password: String? = null) {
+        Log.d("ProfileViewModel", "Updating profile. Name: $name, StoreName: $storeName, Pwd changed: ${password != null}")
         _updateState.value = UpdateProfileState.Loading
 
         viewModelScope.launch {
@@ -105,6 +102,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 val token = tokenManager.getAuthHeader()
                 
                 val updates = mutableMapOf("name" to name)
+                if (!storeName.isNullOrEmpty()) {
+                    updates["storeName"] = storeName
+                }
                 if (!password.isNullOrEmpty()) {
                     updates["password"] = password
                 }
@@ -117,6 +117,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                         tokenManager.getUserEmail() ?: "",
                         name
                     )
+                    // Simpan store name jika ada
+                    if (!storeName.isNullOrEmpty()) {
+                        tokenManager.saveStoreName(storeName)
+                    }
                     _updateState.value = UpdateProfileState.Success
                     // Tampilkan notifikasi profil diperbarui
                     NotificationHelper.showProfileUpdatedNotification(getApplication())

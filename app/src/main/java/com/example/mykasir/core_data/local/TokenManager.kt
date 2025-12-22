@@ -49,6 +49,10 @@ class TokenManager(context: Context) {
         return if (id == -1) null else id
     }
 
+    fun saveStoreName(storeName: String) {
+        prefs.edit().putString(KEY_STORE_NAME, storeName).apply()
+    }
+
     fun getStoreName(): String? {
         return prefs.getString(KEY_STORE_NAME, null)
     }
